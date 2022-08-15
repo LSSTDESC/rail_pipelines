@@ -21,7 +21,7 @@ classifiers = [
 dynamic = ["version"]
 dependencies = [
     "rail",
-    "rail-top",
+    "rail-hub",
 ]
 
 [project.optional-dependencies]
