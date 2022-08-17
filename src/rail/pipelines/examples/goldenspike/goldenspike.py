@@ -9,8 +9,7 @@ import numpy as np
 from rail.stages import *
 
 from rail.pipelines.utils.name_factory import NameFactory, DataType, CatalogType, ModelType, PdfType
-from rail.pipelines.utils.pipeline import RailPipeline
-from rail.core.stage import RailStage
+from rail.core.stage import RailStage, RailPipeline
 
 import ceci
 
