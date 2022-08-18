@@ -141,7 +141,7 @@ class GoldenspikePipeline(RailPipeline):
         self.estimate_fzboost = FZBoost.build(
             connections=dict(
                 input=self.table_conv_test.io.output,
-                model=self.inform_bpz.io.model,
+                model=self.inform_fzboost.io.model,
             ),
             nondetect_val=np.nan,
             hdf5_groupname='',
