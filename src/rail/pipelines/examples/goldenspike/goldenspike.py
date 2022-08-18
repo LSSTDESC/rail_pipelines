@@ -169,7 +169,7 @@ class GoldenspikePipeline(RailPipeline):
         self.naive_stack_test = NaiveStack.build(
             connections=dict(input=self.estimate_bpz.io.output),
             output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.nz), "output_naive_stack_test.hdf5"),
-            single_NZ=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.nz), "single_NZ_point_estimate_test.hdf5"),
+            single_NZ=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.nz), "single_NZ_naive_stack_test.hdf5"),
         )
 
 
