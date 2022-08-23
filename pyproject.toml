@@ -1,5 +1,5 @@
 [project]
-name = "rail-pipelines"
+name = "pz-rail-pipelines"
 description = "RAIL pipelines"
 readme = "README.rst"
 requires-python = ">=3.8"
@@ -20,8 +20,8 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-    "rail",
-    "rail-hub",
+    "pz-rail",
+    "pz-rail-hub",
 ]
 
 [project.optional-dependencies]
