@@ -38,6 +38,7 @@ requires = ["setuptools>=61", "wheel", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
+write_to = "src/rail/pipelines/_version.py"
 
 [tool.coverage.run]
 source = ["src/rail/pipelines"]
@@ -101,7 +102,7 @@ line_length = 110
 
 [tool.pytest.ini_options]
 addopts = [
-    "--cov=src/lsst/cm/tools",
+    "--cov=src/rail",
     "--cov-branch",
     "--cov-report=html"
 ]
