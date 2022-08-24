@@ -102,7 +102,7 @@ line_length = 110
 
 [tool.pytest.ini_options]
 addopts = [
-    "--cov=src/lsst/cm/tools",
+    "--cov=src/rail",
     "--cov-branch",
     "--cov-report=html"
 ]
