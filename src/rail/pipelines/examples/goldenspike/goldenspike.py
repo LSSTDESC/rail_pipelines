@@ -30,8 +30,8 @@ class GoldenspikePipeline(RailPipeline):
         band_dict = {band:f'mag_{band}_lsst' for band in bands}
         rename_dict = {f'mag_{band}_lsst_err':f'mag_err_{band}_lsst' for band in bands}
 
-        self.flow_engine_train = FlowEngine.build(
-            flow=flow_file,
+        self.flow_engine_train = FlowCreator.build(
+            model=flow_file,
             n_samples=50,
             seed=1235,
             output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.created), "output_flow_engine_train.pq"),
@@ -176,5 +176,5 @@ class GoldenspikePipeline(RailPipeline):
 
 if __name__ == '__main__':    
     pipe = GoldenspikePipeline()
-    pipe.initialize(dict(flow=flow_file), dict(output_dir='.', log_dir='.', resume=False), None)
+    pipe.initialize(dict(model=flow_file), dict(output_dir='.', log_dir='.', resume=False), None)
     pipe.save('tmp_goldenspike.yml')
