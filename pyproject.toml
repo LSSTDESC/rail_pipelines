@@ -20,8 +20,7 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-    "pz-rail",
-    "pz-rail-hub",
+    "pz-rail-hub>=0.0.3",
 ]
 
 [project.optional-dependencies]

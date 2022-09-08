@@ -73,8 +73,8 @@ class GoldenspikePipeline(RailPipeline):
             output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_table_conv_train.hdf5"),
         )
 
-        self.flow_engine_test = FlowEngine.build(
-            flow=flow_file,
+        self.flow_engine_test = FlowCreator.build(
+            model=flow_file,
             n_samples=50,
             output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_flow_engine_test.pq"),
         )
