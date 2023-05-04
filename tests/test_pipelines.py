@@ -7,7 +7,7 @@ from rail.core.utils import RAILDIR
 
 def test_golden():
     namer = NameFactory()
-    flow_file = os.path.join(RAILDIR, 'examples/goldenspike/data/pretrained_flow.pkl')
+    flow_file = os.path.join(RAILDIR, 'rail/examples_data/goldenspike_data/data/pretrained_flow.pkl')
     output_dir = namer.get_project_dir('.', 'tmp_test', 'tmp_test')
     try:
         os.makedirs(output_dir)
