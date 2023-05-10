@@ -6,6 +6,8 @@ import os
 import numpy as np
 
 # Various rail modules
+import rail.stages
+rail.stages.import_and_attach_all()
 from rail.stages import *
 
 from rail.pipelines.utils.name_factory import NameFactory, DataType, CatalogType, ModelType, PdfType
@@ -18,7 +20,6 @@ namer = NameFactory()
 from rail.core.utils import RAILDIR
 
 input_file = 'rubin_dm_dc2_example.pq'
-
 
 
 class InformPipeline(RailPipeline):
