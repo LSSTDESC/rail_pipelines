@@ -20,7 +20,7 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-    "pz-rail @ git+https://github.com/LSSTDESC/RAIL@eac/introspection",
+    "pz-rail>=0.98.5",
 ]
 
 [project.optional-dependencies]
