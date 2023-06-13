@@ -20,20 +20,34 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-    "pz-rail>=0.98.5",
+    "pz-rail-base",
 ]
 
 [project.optional-dependencies]
 full = [
-    "pz-rail-bpz>=0.0.9",
-    "pz-rail-flexzboost>=0.0.9",
-    "pz-rail-gpz-v1>=0.1.1",
+    "pz-rail-astro-tools",
+    "pz-rail-bpz",
+    "pz-rail-dsps",
+    "pz-rail-flexzboost",
+    "pz-rail-fsps",
+    "pz-rail-gpz-v1",
+    "pz-rail-pzflow",
+    "pz-rail-sklearn",
+    "pz-rail-som",
+    "qp-prob[full]",
 ]
 
 dev = [
-    "pz-rail-bpz>=0.0.9",
-    "pz-rail-flexzboost>=0.0.9",
-    "pz-rail-gpz-v1>=0.1.1",
+    "pz-rail-astro-tools",
+    "pz-rail-bpz",
+    "pz-rail-dsps",
+    "pz-rail-flexzboost",
+    "pz-rail-fsps",
+    "pz-rail-gpz-v1",
+    "pz-rail-pzflow",
+    "pz-rail-sklearn",
+    "pz-rail-som",
+    "qp-prob[full]",
     "coverage",
     "pylint",
     "pytest",
