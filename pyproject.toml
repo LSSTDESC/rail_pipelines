@@ -20,17 +20,17 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-    "pz-rail>=0.98.5",
+    "pz-rail-base",
 ]
 
 [project.optional-dependencies]
 full = [
     "pz-rail-astro-tools",
-    "pz-rail-bpz@git+https://github.com/LSSTDESC/rail_bpz.git@eac/minimal#egg=pz-rail-bpz",
-    "pz-rail-dsps@git+https://github.com/LSSTDESC/rail_dsps.git#egg=pz-rail-dsps",
-    "pz-rail-flexzboost@git+https://github.com/LSSTDESC/rail_flexzboost.git@eac/minimal#egg=pz-rail-flexzboost",
-    "pz-rail-fsps@git+https://github.com/LSSTDESC/rail_fsps.git@eac/minimal#egg=pz-rail-fsps",
-    "pz-rail-gpz-v1@git+https://github.com/LSSTDESC/rail_gpz_v1.git@eac/minimal#egg=pz-rail-gpz-v1",
+    "pz-rail-bpz",
+    "pz-rail-dsps",
+#    "pz-rail-flexzboost",
+#    "pz-rail-fsps",
+    "pz-rail-gpz-v1",
     "pz-rail-pzflow",
     "pz-rail-sklearn",
     "pz-rail-som",
@@ -39,11 +39,11 @@ full = [
 
 dev = [
     "pz-rail-astro-tools",
-    "pz-rail-bpz@git+https://github.com/LSSTDESC/rail_bpz.git@eac/minimal#egg=pz-rail-bpz",
-    "pz-rail-dsps@git+https://github.com/LSSTDESC/rail_dsps.git#egg=pz-rail-dsps",
-    "pz-rail-flexzboost@git+https://github.com/LSSTDESC/rail_flexzboost.git@eac/minimal#egg=pz-rail-flexzboost",
-    "pz-rail-fsps@git+https://github.com/LSSTDESC/rail_fsps.git@eac/minimal#egg=pz-rail-fsps",
-    "pz-rail-gpz-v1@git+https://github.com/LSSTDESC/rail_gpz_v1.git@eac/minimal#egg=pz-rail-gpz-v1",
+    "pz-rail-bpz",
+    "pz-rail-dsps",
+#    "pz-rail-flexzboost",
+#    "pz-rail-fsps",
+    "pz-rail-gpz-v1",
     "pz-rail-pzflow",
     "pz-rail-sklearn",
     "pz-rail-som",
