@@ -99,7 +99,7 @@ class GoldenspikePipeline(RailPipeline):
             output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_table_conv_test.hdf5"),
         )
 
-        self.inform_knn = Inform_KNearNeighPDF.build(
+        self.inform_knn = KNearNeighInformer.build(
             connections=dict(input=self.table_conv_train.io.output),
             nondetect_val=np.nan,
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), 'knnpz.pkl'),
@@ -130,7 +130,7 @@ class GoldenspikePipeline(RailPipeline):
             output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_estimate_bpz.hdf5"),
         )
 
-        self.estimate_knn = KNearNeighPDF.build(
+        self.estimate_knn = KNearNeighEstimator.build(
             connections=dict(
                 input=self.table_conv_test.io.output,
                 model=self.inform_knn.io.model,

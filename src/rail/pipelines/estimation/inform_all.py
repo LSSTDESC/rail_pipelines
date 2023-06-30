@@ -42,7 +42,7 @@ class InformPipeline(RailPipeline):
             hdf5_groupname='',
         )
         
-        self.inform_knn = Inform_KNearNeighPDF.build(
+        self.inform_knn = KNearNeighInformer.build(
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_knn.pkl"),
             hdf5_groupname='',
         )
