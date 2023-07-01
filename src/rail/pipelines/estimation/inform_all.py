@@ -32,7 +32,7 @@ class InformPipeline(RailPipeline):
         bands = ['u','g','r','i','z','y']
         #band_list = [f'mag_{band}_lsst' for band in bands] + [f'mag_err_{band}_lsst' for band in bands]
         
-        self.inform_trainz = Inform_trainZ.build(
+        self.inform_trainz = TrainZInformer.build(
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_trainz.pkl"),
             hdf5_groupname='',
         )
