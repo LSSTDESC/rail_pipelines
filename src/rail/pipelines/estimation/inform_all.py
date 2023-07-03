@@ -52,7 +52,7 @@ class InformPipeline(RailPipeline):
              hdf5_groupname='',
         )
 
-        self.inform_somoclu = Inform_somocluSOMSummarizer.build(
+        self.inform_somoclu = SOMocluInformer.build(
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_somoclu.pkl"),
             hdf5_groupname='',
         )
