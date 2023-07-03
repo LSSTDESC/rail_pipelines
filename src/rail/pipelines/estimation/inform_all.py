@@ -74,7 +74,7 @@ class InformPipeline(RailPipeline):
             hdf5_groupname='',
         )
         
-        self.inform_gpz = Inform_GPz_v1.build(
+        self.inform_gpz = GPzInformer.build(
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_gpz.hdf5"),
              hdf5_groupname='',
         )
