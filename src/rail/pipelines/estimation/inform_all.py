@@ -37,7 +37,7 @@ class InformPipeline(RailPipeline):
             hdf5_groupname='',
         )
         
-        self.inform_simplenn = Inform_SimpleNN.build(
+        self.inform_simplenn = SklNeurNetInformer.build(
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_simplenn.pkl"),
             hdf5_groupname='',
         )
