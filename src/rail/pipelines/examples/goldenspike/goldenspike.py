@@ -112,7 +112,7 @@ class GoldenspikePipeline(RailPipeline):
             hdf5_groupname=''
         )
 
-        self.inform_bpz = Inform_BPZ_lite.build(
+        self.inform_bpz = BPZliteInformer.build(
             connections=dict(input=self.table_conv_train.io.output),
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), 'trained_BPZ.pkl'),
             hdf5_groupname='',
@@ -121,7 +121,7 @@ class GoldenspikePipeline(RailPipeline):
             type_file='',
         )
 
-        self.estimate_bpz = BPZ_lite.build(
+        self.estimate_bpz = BPZliteEstimator.build(
             connections=dict(
                 input=self.table_conv_test.io.output,
                 model=self.inform_bpz.io.model,

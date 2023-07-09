@@ -58,7 +58,7 @@ class InformPipeline(RailPipeline):
         )
 
 
-        self.inform_bpz = Inform_BPZ_lite.build(
+        self.inform_bpz = BPZliteInformer.build(
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_bpz.hdf5"),
              hdf5_groupname='',
         )
