@@ -106,7 +106,7 @@ class GoldenspikePipeline(RailPipeline):
             hdf5_groupname=''
         )
 
-        self.inform_fzboost = Inform_FZBoost.build(
+        self.inform_fzboost = FlexZBoostInformer.build(
             connections=dict(input=self.table_conv_train.io.output),
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), 'fzboost.pkl'),
             hdf5_groupname=''
@@ -140,7 +140,7 @@ class GoldenspikePipeline(RailPipeline):
             output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_estimate_knn.hdf5"),
         )
 
-        self.estimate_fzboost = FZBoost.build(
+        self.estimate_fzboost = FlexZBoostEstimator.build(
             connections=dict(
                 input=self.table_conv_test.io.output,
                 model=self.inform_fzboost.io.model,
