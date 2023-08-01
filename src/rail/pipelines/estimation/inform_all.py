@@ -57,11 +57,12 @@ class InformPipeline(RailPipeline):
             hdf5_groupname='',
         )
 
-
+        """
         self.inform_bpz = BPZliteInformer.build(
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_bpz.hdf5"),
              hdf5_groupname='',
         )
+        """
         
         """
         self.inform_delight = Inform_DelightPZ.build(
@@ -73,12 +74,12 @@ class InformPipeline(RailPipeline):
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_FZBoost.hdf5"),
             hdf5_groupname='',
         )
-        
+        """
         self.inform_gpz = GPzInformer.build(
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_gpz.hdf5"),
              hdf5_groupname='',
         )
-
+        """
         
 
 if __name__ == '__main__':    
