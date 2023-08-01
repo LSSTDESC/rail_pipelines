@@ -57,11 +57,12 @@ class InformPipeline(RailPipeline):
             hdf5_groupname='',
         )
 
-
+        """
         self.inform_bpz = BPZliteInformer.build(
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_bpz.hdf5"),
              hdf5_groupname='',
         )
+        """
         
         """
         self.inform_delight = DelightInformer.build(

@@ -32,12 +32,12 @@ class EstimatePipeline(RailPipeline):
         bands = ['u','g','r','i','z','y']
         #band_list = [f'mag_{band}_lsst' for band in bands] + [f'mag_err_{band}_lsst' for band in bands]
 
-        # self.estimate_trainz = TrainZEstimator.build(
-        #     aliases=dict(model="model_trainz"),
-        #     output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_trainz.hdf5"),
-        #     hdf5_groupname='',
-        # )
-                
+        self.estimate_trainz = TrainZEstimator.build(
+            aliases=dict(model="model_trainz"),
+            output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_trainz.hdf5"),
+            hdf5_groupname='',
+        )
+
         self.estimate_simplenn = SklNeurNetEstimator.build(
             aliases=dict(model="model_simplenn"),
             output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_simplenn.hdf5"),
@@ -61,7 +61,7 @@ class EstimatePipeline(RailPipeline):
             output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.nz), "output_somoclu.hdf5"),            
             hdf5_groupname='',
         )
-        
+
         """
         self.estimate_bpz = BPZliteEstimator.build(
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_bpz.hdf5"),
