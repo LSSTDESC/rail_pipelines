@@ -32,33 +32,33 @@ class InformPipeline(RailPipeline):
         bands = ['u','g','r','i','z','y']
         #band_list = [f'mag_{band}_lsst' for band in bands] + [f'mag_err_{band}_lsst' for band in bands]
         
-        self.inform_trainz = Inform_trainZ.build(
+        self.inform_trainz = TrainZInformer.build(
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_trainz.pkl"),
             hdf5_groupname='',
         )
         
-        self.inform_simplenn = Inform_SimpleNN.build(
+        self.inform_simplenn = SklNeurNetInformer.build(
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_simplenn.pkl"),
             hdf5_groupname='',
         )
         
-        self.inform_knn = Inform_KNearNeighPDF.build(
+        self.inform_knn = KNearNeighInformer.build(
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_knn.pkl"),
             hdf5_groupname='',
         )
         
-        self.inform_simplesom = Inform_SimpleSOMSummarizer.build(
+        self.inform_simplesom = MiniSOMInformer.build(
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_simplesom.pkl"),
              hdf5_groupname='',
         )
 
-        self.inform_somoclu = Inform_somocluSOMSummarizer.build(
+        self.inform_somoclu = SOMocluInformer.build(
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_somoclu.pkl"),
             hdf5_groupname='',
         )
 
 
-        self.inform_bpz = Inform_BPZ_lite.build(
+        self.inform_bpz = BPZliteInformer.build(
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_bpz.hdf5"),
              hdf5_groupname='',
         )
@@ -69,12 +69,12 @@ class InformPipeline(RailPipeline):
              hdf5_groupname='',
         )
         """
-        self.inform_fzboost = Inform_FZBoost.build(
+        self.inform_fzboost = FlexZBoostInformer.build(
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_FZBoost.hdf5"),
             hdf5_groupname='',
         )
         
-        self.inform_gpz = Inform_GPz_v1.build(
+        self.inform_gpz = GPzInformer.build(
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_gpz.hdf5"),
              hdf5_groupname='',
         )
