@@ -99,20 +99,20 @@ class GoldenspikePipeline(RailPipeline):
             output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_table_conv_test.hdf5"),
         )
 
-        self.inform_knn = Inform_KNearNeighPDF.build(
+        self.inform_knn = KNearNeighInformer.build(
             connections=dict(input=self.table_conv_train.io.output),
             nondetect_val=np.nan,
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), 'knnpz.pkl'),
             hdf5_groupname=''
         )
 
-        self.inform_fzboost = Inform_FZBoost.build(
+        self.inform_fzboost = FlexZBoostInformer.build(
             connections=dict(input=self.table_conv_train.io.output),
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), 'fzboost.pkl'),
             hdf5_groupname=''
         )
 
-        self.inform_bpz = Inform_BPZ_lite.build(
+        self.inform_bpz = BPZliteInformer.build(
             connections=dict(input=self.table_conv_train.io.output),
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), 'trained_BPZ.pkl'),
             hdf5_groupname='',
@@ -121,7 +121,7 @@ class GoldenspikePipeline(RailPipeline):
             type_file='',
         )
 
-        self.estimate_bpz = BPZ_lite.build(
+        self.estimate_bpz = BPZliteEstimator.build(
             connections=dict(
                 input=self.table_conv_test.io.output,
                 model=self.inform_bpz.io.model,
@@ -130,7 +130,7 @@ class GoldenspikePipeline(RailPipeline):
             output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_estimate_bpz.hdf5"),
         )
 
-        self.estimate_knn = KNearNeighPDF.build(
+        self.estimate_knn = KNearNeighEstimator.build(
             connections=dict(
                 input=self.table_conv_test.io.output,
                 model=self.inform_knn.io.model,
@@ -140,7 +140,7 @@ class GoldenspikePipeline(RailPipeline):
             output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_estimate_knn.hdf5"),
         )
 
-        self.estimate_fzboost = FZBoost.build(
+        self.estimate_fzboost = FlexZBoostEstimator.build(
             connections=dict(
                 input=self.table_conv_test.io.output,
                 model=self.inform_fzboost.io.model,
@@ -162,13 +162,13 @@ class GoldenspikePipeline(RailPipeline):
             )
             self.add_stage(the_eval)
 
-        self.point_estimate_test = PointEstimateHist.build(
+        self.point_estimate_test = PointEstHistSummarizer.build(
             connections=dict(input=self.estimate_bpz.io.output),
             output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.nz), "output_point_estimate_test.hdf5"),
             single_NZ=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.nz), "single_NZ_point_estimate_test.hdf5"),
         )
 
-        self.naive_stack_test = NaiveStack.build(
+        self.naive_stack_test = NaiveStackSummarizer.build(
             connections=dict(input=self.estimate_bpz.io.output),
             output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.nz), "output_naive_stack_test.hdf5"),
             single_NZ=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.nz), "single_NZ_naive_stack_test.hdf5"),

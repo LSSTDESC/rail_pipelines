@@ -64,7 +64,7 @@ class InformPipeline(RailPipeline):
         )
         
         """
-        self.inform_delight = Inform_DelightPZ.build(
+        self.inform_delight = DelightInformer.build(
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_delight.hdf5"),
              hdf5_groupname='',
         )
