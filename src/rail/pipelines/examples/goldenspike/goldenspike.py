@@ -41,7 +41,7 @@ class GoldenspikePipeline(RailPipeline):
 
         self.lsst_error_model_train = LSSTErrorModel.build(
             connections=dict(input=self.flow_engine_train.io.output),    
-            bandNames=band_dict, seed=29,
+            renameDict=band_dict, seed=29,
             output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_lsst_error_model_train.pq"),
         )
 

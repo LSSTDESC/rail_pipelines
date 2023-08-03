@@ -28,11 +28,9 @@ class SurveyNonuniformDegraderPipeline(RailPipeline):
         DS = RailStage.data_store
         DS.__class__.allow_overwrite = True
         
-        bands = ['u','g','r','i','z','y']
-        #band_dict = {band:f'mag_{band}_lsst' for band in bands}
-        #rename_dict = {f'mag_{band}_lsst_err':f'mag_err_{band}_lsst' for band in bands}
-        
         ### Creation steps:
+        bands = ['u','g','r','i','z','y']
+        rename_dict = {f'mag_{band}_lsst_err':f'mag_err_{band}_lsst' for band in bands}
         
         # This may be changed later
         self.flow_engine_train = FlowCreator.build(
@@ -42,19 +40,35 @@ class SurveyNonuniformDegraderPipeline(RailPipeline):
         )
         
         self.obs_condition = ObsCondition.build(
-            connections=dict(input=self.flow_engine_train.io.output),    
+            connections=dict(input=self.flow_engine_train.io.output), 
             output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_obscondition.pq"),
+        )
+        
+        self.col_remapper_train = ColumnMapper.build(
+            connections=dict(input=self.obs_condition.io.output),
+            columns=rename_dict,
+            output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_col_remapper_train.pq"),
         )
         
         ### Estimation steps:
         
         self.deredden = Dereddener.build(
-            connections=dict(input=self.obs_condition.io.output),
+            connections=dict(input=self.col_remapper_train.io.output),
             output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_deredden.pq"),
         )
         
+        self.inform_bpz = BPZliteInformer.build(
+            connections=dict(input=self.table_conv_train.io.output),
+            model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), 'trained_BPZ.pkl'),
+            hdf5_groupname='',
+            nt_array=[8],
+            mmax=26.,
+            type_file='',
+        )
+        
         self.estimate_bpz = BPZliteEstimator.build(
-            connections=dict(input=self.deredden.io.output,),
+            connections=dict(input=self.deredden.output,
+                            model=self.inform_bpz.io.model,),
             hdf5_groupname='',
             output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_estimate_bpz.hdf5"),
         )
@@ -78,6 +92,5 @@ class SurveyNonuniformDegraderPipeline(RailPipeline):
         
 if __name__ == '__main__':
     pipe = SurveyNonuniformDegraderPipeline()
-    pipe.flow_engine_train.config.update(n_samples=5)
     pipe.initialize(dict(model=flow_file), dict(output_dir='.', log_dir='.', resume=False), None)
     pipe.save('tmp_survey_nonuniformity.yml')
