@@ -1,0 +1,33 @@
+config: evaluate_all_config.yml
+inputs:
+  input_fzboost: /global/homes/j/joselotl/rail_pipelines/nb/estimation/hsc/pdf/pz/output_FZBoost.hdf5
+  input_knn: /global/homes/j/joselotl/rail_pipelines/nb/estimation/hsc/pdf/pz/output_knn.hdf5
+  input_simplenn: /global/homes/j/joselotl/rail_pipelines/nb/estimation/hsc/pdf/pz/output_simplenn.hdf5
+  input_simplesom: /global/homes/j/joselotl/rail_pipelines/nb/estimation/hsc/pdf/pz/output_simplesom.hdf5
+  input_somoclu: /global/homes/j/joselotl/rail_pipelines/nb/estimation/hsc/pdf/pz/output_somoclu.hdf5
+  input_trainz: /global/homes/j/joselotl/rail_pipelines/nb/estimation/hsc/pdf/pz/output_trainz.hdf5
+  truth: /global/cfs/cdirs/lsst/groups/PZ/HSCDATA/SPECTROSCOPY/dered_223501_sz_match_pdr3_dud_NONDET.hdf5
+log_dir: .
+modules: rail
+output_dir: .
+resume: true
+site:
+  name: local
+  max_threads: 2
+stages:
+- classname: Evaluator
+  module_name: rail.evaluation.evaluator
+  name: evaluate_trainz
+  nprocess: 1
+- classname: Evaluator
+  module_name: rail.evaluation.evaluator
+  name: evaluate_simplenn
+  nprocess: 1
+- classname: Evaluator
+  module_name: rail.evaluation.evaluator
+  name: evaluate_knn
+  nprocess: 1
+- classname: Evaluator
+  module_name: rail.evaluation.evaluator
+  name: evaluate_fzboost
+  nprocess: 1
