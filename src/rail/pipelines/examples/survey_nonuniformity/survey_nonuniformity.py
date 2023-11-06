@@ -54,11 +54,12 @@ class SurveyNonuniformDegraderPipeline(RailPipeline):
         
         self.deredden = Dereddener.build(
             connections=dict(input=self.col_remapper_train.io.output),
+            dustmap_dir=".",
             output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_deredden.pq"),
         )
         
         self.inform_bpz = BPZliteInformer.build(
-            connections=dict(input=self.table_conv_train.io.output),
+            connections=dict(input=self.deredden.io.output),
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), 'trained_BPZ.pkl'),
             hdf5_groupname='',
             nt_array=[8],
@@ -67,7 +68,7 @@ class SurveyNonuniformDegraderPipeline(RailPipeline):
         )
         
         self.estimate_bpz = BPZliteEstimator.build(
-            connections=dict(input=self.deredden.output,
+            connections=dict(input=self.deredden.io.output,
                             model=self.inform_bpz.io.model,),
             hdf5_groupname='',
             output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_estimate_bpz.hdf5"),
