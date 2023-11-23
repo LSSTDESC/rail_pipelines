@@ -44,22 +44,28 @@ class SurveyNonuniformDegraderPipeline(RailPipeline):
             output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_obscondition.pq"),
         )
         
-        self.col_remapper_train = ColumnMapper.build(
+        self.col_remapper = ColumnMapper.build(
             connections=dict(input=self.obs_condition.io.output),
             columns=rename_dict,
-            output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_col_remapper_train.pq"),
+            output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_col_remapper.pq"),
         )
         
         ### Estimation steps:
-        
         self.deredden = Dereddener.build(
-            connections=dict(input=self.col_remapper_train.io.output),
+            connections=dict(input=self.col_remapper.io.output),
             dustmap_dir=".",
             output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_deredden.pq"),
         )
         
-        self.inform_bpz = BPZliteInformer.build(
+        ### convert table into hdf5 format for estimation
+        self.table_conv = TableConverter.build(
             connections=dict(input=self.deredden.io.output),
+            output_format='numpyDict',
+            output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_table_conv.hdf5"),
+        )
+        
+        self.inform_bpz = BPZliteInformer.build(
+            connections=dict(input=self.table_conv.io.output),
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), 'trained_BPZ.pkl'),
             hdf5_groupname='',
             nt_array=[8],
@@ -68,23 +74,13 @@ class SurveyNonuniformDegraderPipeline(RailPipeline):
         )
         
         self.estimate_bpz = BPZliteEstimator.build(
-            connections=dict(input=self.deredden.io.output,
+            connections=dict(input=self.table_conv.io.output,
                             model=self.inform_bpz.io.model,),
             hdf5_groupname='',
             output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_estimate_bpz.hdf5"),
         )
         
-        """
-        # some sort of point estimates for pz
-        self.point_estimate_test = PointEstimateHist.build(
-            connections=dict(input=self.estimate_bpz.io.output),
-            output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.nz), "output_point_estimate_test.hdf5"),
-            single_NZ=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.nz), "single_NZ_point_estimate_test.hdf5"),
-        )
-        """
-        
         ### Tomographic binning
-        
         self.tomopraphy = UniformBinningClassifier.build(
             connections=dict(input=self.estimate_bpz.io.output),
             output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_tomography.hdf5"),
