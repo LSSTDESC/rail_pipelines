@@ -1,0 +1,13 @@
+inform_trainz:
+  aliases:
+    model: model_inform_trainz
+  config: null
+  hdf5_groupname: ''
+  input: None
+  model: model/estimator/model_trainz.pkl
+  name: inform_trainz
+  nzbins: 301
+  output_mode: default
+  redshift_col: redshift
+  zmax: 3.0
+  zmin: 0.0
