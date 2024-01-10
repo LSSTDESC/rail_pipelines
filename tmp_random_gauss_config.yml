@@ -2,7 +2,7 @@ rg_estimate:
   aliases:
     output: output_rg_estimate
   calculated_point_estimates: []
-  chunk_size: 10000
+  chunk_size: 10
   column_name: mag_i_lsst
   config: null
   hdf5_groupname: photometry
@@ -11,7 +11,7 @@ rg_estimate:
     groups: null
     length: null
     partial: false
-    path: /pscratch/sd/o/olynn/rail_base/src/rail/examples_data/testdata/validation_10gal.hdf5
+    path: /pscratch/sd/o/olynn/rail_base/src/rail/examples_data/testdata/training_100gal.hdf5
     tag: validation_data
   model: null
   name: rg_estimate

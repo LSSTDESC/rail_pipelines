@@ -1,6 +1,6 @@
 config: tmp_random_gauss_config.yml
 inputs:
-  input: validation_10gal.hdf5
+  input: training_100gal.hdf5
   model: model/estimator/model_randgauss.pkl
 log_dir: .
 modules: rail
@@ -13,4 +13,4 @@ stages:
 - classname: RandomGaussEstimator
   module_name: rail.estimation.algos.random_gauss
   name: rg_estimate
-  nprocess: 1
+  nprocess: 2
