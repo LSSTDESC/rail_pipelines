@@ -1,0 +1,23 @@
+rg_estimate:
+  aliases:
+    output: output_rg_estimate
+  calculated_point_estimates: []
+  chunk_size: 10
+  column_name: mag_i_lsst
+  config: null
+  hdf5_groupname: photometry
+  input:
+    fileObj: null
+    groups: null
+    length: null
+    partial: false
+    path: /pscratch/sd/o/olynn/rail_base/src/rail/examples_data/testdata/training_100gal.hdf5
+    tag: validation_data
+  model: null
+  name: rg_estimate
+  nzbins: 301
+  output_mode: default
+  rand_width: 0.025
+  rand_zmax: 3.0
+  rand_zmin: 0.0
+  seed: 42
