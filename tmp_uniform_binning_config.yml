@@ -1,0 +1,18 @@
+ub_classify:
+  aliases:
+    output: output_ub_classify
+  chunk_size: 1000
+  config: null
+  hdf5_groupname: photometry
+  id_name: CATAID
+  name: ub_classify
+  nbins: 1
+  no_assign: -99
+  output_mode: default
+  point_estimate: zmode
+#  zbin_edges:
+#  - 0.0
+#  - 0.3
+  zmax: 3.0
+  zmin: 0.0
+  nbins: 20
