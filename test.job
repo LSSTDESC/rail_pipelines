@@ -15,3 +15,9 @@
 
 # now for UBC
 OMP_NUM_THREADS=1 mpirun -n 4 python3 -m ceci rail.estimation.algos.uniform_binning.UniformBinningClassifier   --input=output_BPZ_lite.hdf5   --name=ub_classify   --config=tmp_uniform_binning_config.yml   --output=./output_ub_classify.hdf5 --mpi
+
+# try the simple version, which used to be fine from bash, but now exits with status -9
+#OMP_NUM_THREADS=1 python3 -m ceci rail.estimation.algos.uniform_binning.UniformBinningClassifier   --input=output_BPZ_lite.hdf5 --name=ub_classify   --config=tmp_uniform_binning_config.yml   --output=./output_ub_classify.hdf5 --mpi
+#OMP_NUM_THREADS=1 python3 -m ceci rail.estimation.algos.uniform_binning.UniformBinningClassifier   --input=output_BPZ_lite.hdf5 --name=ub_classify   --config=tmp_uniform_binning_config.yml   --output=./output_ub_classify.hdf5
+
+#ceci tmp_uniform_binning.yml
