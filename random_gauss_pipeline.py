@@ -9,6 +9,7 @@ from rail.core.utils import RAILDIR
 from rail.estimation.algos import random_gauss
 from rail.core.data import (
     TableHandle,
+    Hdf5Handle
 )
 
 sci_ver_str = scipy.__version__.split(".")
