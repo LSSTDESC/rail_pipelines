@@ -152,13 +152,14 @@ class GoldenspikePipeline(RailPipeline):
 
         eval_dict = dict(bpz=self.estimate_bpz, fzboost=self.estimate_fzboost, knn=self.estimate_knn)
         for key, val in eval_dict.items():
-            the_eval = OldEvaluator.make_and_connect(
-                name=f'{key}_eval',
+            the_eval = DistToPointEvaluator.make_and_connect(
+                name=f'{key}_dist_to_point',
                 connections=dict(
                     input=val.io.output,
                     truth=self.flow_engine_train.io.output,
                 ),
                 output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), f"output_{key}_eval.pq"),
+                force_exact=True,
             )
             self.add_stage(the_eval)
 
