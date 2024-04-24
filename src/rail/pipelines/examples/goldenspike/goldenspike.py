@@ -152,7 +152,7 @@ class GoldenspikePipeline(RailPipeline):
 
         eval_dict = dict(bpz=self.estimate_bpz, fzboost=self.estimate_fzboost, knn=self.estimate_knn)
         for key, val in eval_dict.items():
-            the_eval = Evaluator.make_and_connect(
+            the_eval = OldEvaluator.make_and_connect(
                 name=f'{key}_eval',
                 connections=dict(
                     input=val.io.output,
