@@ -16,7 +16,7 @@ from rail.core.stage import RailStage, RailPipeline
 import ceci
 
 namer = NameFactory()
-from rail.core.utils import RAILDIR
+from rail.core.common_params import RAILDIR
 flow_file = os.path.join(RAILDIR, 'rail/examples_data/goldenspike_data/data/pretrained_flow.pkl')
 
 

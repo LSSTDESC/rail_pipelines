@@ -17,7 +17,7 @@ import ceci
 
 
 namer = NameFactory()
-from rail.core.utils import RAILDIR
+from rail.core.common_params import RAILDIR
 
 input_file = 'rubin_dm_dc2_example.pq'
 
