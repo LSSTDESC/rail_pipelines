@@ -2,7 +2,7 @@ import os
 from rail.pipelines.examples.goldenspike.goldenspike import GoldenspikePipeline
 from rail.pipelines.utils.name_factory import NameFactory, DataType, CatalogType, ModelType, PdfType
 from rail.core.stage import RailStage, RailPipeline
-from rail.core.common_params import RAILDIR
+from rail.utils.path_utils import RAILDIR
 
 
 def test_golden():

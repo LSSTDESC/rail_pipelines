@@ -17,7 +17,7 @@ import ceci
 
 
 namer = NameFactory()
-from rail.core.common_params import RAILDIR
+from rail.utils.path_utils import RAILDIR
 flow_file = os.path.join(RAILDIR, 'rail/examples_data/goldenspike_data/data/pretrained_flow.pkl')
 
 
