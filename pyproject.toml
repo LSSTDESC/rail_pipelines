@@ -18,6 +18,8 @@ dynamic = ["version"]
 
 dependencies = [
     "pz-rail-base",
+    "click",
+    "pyarrow",
 ]
 
 # On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
@@ -34,6 +36,9 @@ dev = [
     "pre-commit", # Used to run checks before finalizing a git commit
     "pylint", # Used for static linting of files
 ]
+
+[project.scripts]
+rail_pipe = "rail.cli.pipe_commands:pipe_cli"
 
 [build-system]
 requires = [
