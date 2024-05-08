@@ -1,0 +1,18 @@
+global: {}
+ub_classify:
+  aliases:
+    input: input_data
+    output: output_ub_classify
+  chunk_size: 10 # orig val was 10_000; trying to force parallelization rn
+  hdf5_groupname: null
+  id_name: CATAID
+  name: ub_classify
+  nbins: 1
+  no_assign: -99
+  output_mode: default
+  point_estimate: zmode
+  zbin_edges:
+  - 0.0
+  - 0.3
+  zmax: 0.3
+  zmin: 0.0
