@@ -148,7 +148,7 @@ def estimate_all(
     config_name = Path(config_path).stem
     config_file = os.path.join(os.path.dirname(config_path), 'estimate_roman_rubin_config.yml')
     input_dirs = glob.glob(f'{input_dir}/*')
-    model_paths = Path(model_dir).glob("*")
+    model_path = Path(model_dir)
     for input_dir_ in input_dirs:
         healpixel = os.path.basename(input_dir_)
         output_dir=f'{pdf_dir}/{config_name}/{healpixel}'
@@ -162,10 +162,10 @@ def estimate_all(
             f'output_dir={output_dir}',
             f'log_dir={output_dir}',
         ]
-        for model_path in model_paths:
-            model_name = model_path.stem
+        for model_file in model_path.glob("*"):
+            model_name = model_file.stem.lower()
             command_line.append(
-                f'inputs.{model_name.lower()}={model_path}'
+                f'inputs.{model_name}={model_file}'
             )
         try:
             handle_command(run_mode, command_line)
