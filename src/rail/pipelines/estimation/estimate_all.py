@@ -62,31 +62,51 @@ class EstimatePipeline(RailPipeline):
             hdf5_groupname='',
         )
 
-        """
         self.estimate_bpz = BPZliteEstimator.build(
-            model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_bpz.hdf5"),
-             hdf5_groupname='',
+            aliases=dict(model="model_bpz"),            
+            output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_bpz.hdf5"),            
+            hdf5_groupname='',
         )
-        """
         
         """
         self.estimate_delight = Estimate_DelightPZ.build(
-            model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_delight.hdf5"),
-             hdf5_groupname='',
+            aliases=dict(model="model_delight"),            
+            output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_delight.hdf5"),            
+            hdf5_groupname='',
+
         )
         """
+        
         self.estimate_fzboost = FlexZBoostEstimator.build(
             aliases=dict(model="model_fzboost"),
             output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_FZBoost.hdf5"),
             hdf5_groupname='',
         )
-        """
+
         self.estimate_gpz = GPzEstimator.build(
-            model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_gpz.hdf5"),
-             hdf5_groupname='',
+            aliases=dict(model="model_gpz"),
+            output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_gpz.pkl"),
+            hdf5_groupname='',
         )
-        """
+
+        self.estimate_pzflow = PZFlowEstimator.build(
+            aliases=dict(model="model_pzflow"),
+            output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_pzflow.pkl"),
+            hdf5_groupname='',
+        )
         
+        self.estimate_tpz = TPZliteEstimator.build(
+            aliases=dict(model="model_tpz"),
+            output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_tpz.pkl"),
+            hdf5_groupname='',
+        )
+        
+        self.estimate_lephare = LephareEstimateer.build(
+           aliases=dict(model="model_lephare"),
+           output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_lephare.pkl"),
+           hdf5_groupname='',
+        )
+         
 
 if __name__ == '__main__':    
     pipe = EstimatePipeline()
@@ -97,6 +117,11 @@ if __name__ == '__main__':
         model_somoclu=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_somoclu.pkl"),
         model_fzboost=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_FZBoost.hdf5"), #_fzboost
         model_trainz=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_trainz.pkl"),        
+        model_bpz=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_bpz.hdf5"),        
+        model_gpz=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_gpz.pkl"),        
+        model_pzflow=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_pzflow.pkl"),        
+        model_tpz=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_tpz.pkl"),        
+        model_lephare=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_lephare.pkl"),        
         input=input_file,
         spec_input = input_file,
     )
