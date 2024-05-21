@@ -125,6 +125,7 @@ def estimate_single(
             f'{config_path}',
             f'config={config_file}',
             f'inputs.input={input_path}',
+            f'inputs.spec_input={input_path}',
             f'inputs.{model_name}={model_path}',
             f'output_dir={output_dir}',
             f'log_dir={output_dir}',
@@ -134,6 +135,34 @@ def estimate_single(
         except Exception as msg:
             print(msg)
             return 1
+    return 0
+
+
+def evaluate_single(
+    config_path,
+    pdf_path,
+    truth_path,
+    output_dir,
+    run_mode=RunMode.bash,
+):
+    # config_name = os.path.splitext(os.path.basename(config_path))[0]
+    config_name = Path(config_path).stem
+    config_file = os.path.join(os.path.dirname(config_path), 'evaluate_single_config.yml')
+
+    command_line = [
+        f'ceci',
+        f'{config_path}',
+        f'config={config_file}',
+        f'inputs.input={pdf_path}',
+        f'inputs.truth={truth_path}',
+        f'output_dir={output_dir}',
+        f'log_dir={output_dir}',
+    ]
+    try:
+        handle_command(run_mode, command_line)
+    except Exception as msg:
+        print(msg)
+        return 1
     return 0
 
 
@@ -211,5 +240,42 @@ def make_training_data(
         small,
         train_output,
     )
+    print("done")
+    return 0
+
+def make_som_data(
+    input_dir,
+    train_dir,
+    train_file,
+):
+    input_path = Path(input_dir)
+    input_name = input_path.name
+    input_base = input_path.parent
+    if train_dir is None:
+        train_path = input_base
+    else:
+        train_path = Path(train_dir)
+    if train_file is None:
+        train_file = input_name + f"_train-som.parquet"
+
+    train_output = str(train_path / train_file)
+
+    paths = []
+    for healpix in input_path.glob("*"):
+        for output in healpix.glob("output_dereddener.pq"):
+            print(output)
+            paths.append(output)
+
+    dataset = ds.dataset(paths)
+    num_rows = dataset.count_rows()
+    schema = dataset.schema
+    print("num rows", num_rows)
+    print("writing", train_output)
+    with pq.ParquetWriter(train_output, schema) as writer:
+        for i, batch in enumerate(dataset.to_batches()):
+            ii = i + 1
+            print(f"writing batch {ii}", end="\r")
+            writer.write_batch(batch)
+
     print("done")
     return 0

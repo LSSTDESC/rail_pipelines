@@ -53,6 +53,17 @@ def estimate_all(input_dir, config_path, pdf_dir, model_dir, run_mode):
     return pipe_scripts.estimate_all(input_dir, config_path, pdf_dir, model_dir, run_mode)
 
 
+@pipe_cli.command(name="evaluate")
+@pipe_options.config_path()
+@pipe_options.pdf_path()
+@pipe_options.truth_path()
+@pipe_options.output_dir()
+@pipe_options.run_mode()
+def evaluate_single(config_path, pdf_path, truth_path, output_dir, run_mode):
+    """Run the estimation stage for a single algorithm"""
+    return pipe_scripts.evaluate_single(config_path, pdf_path, truth_path, output_dir, run_mode)
+
+
 @pipe_cli.command()
 @pipe_options.input_dir()
 @pipe_options.train_dir()
@@ -62,6 +73,14 @@ def make_training_data(input_dir, train_dir, train_file, size):
     """Make a training data set by randomly selecting objects"""
     return pipe_scripts.make_training_data(input_dir, train_dir, train_file, size)
 
+
+@pipe_cli.command()
+@pipe_options.input_dir()
+@pipe_options.train_dir()
+@pipe_options.train_file()
+def make_som_data(input_dir, train_dir, train_file):
+    """Make a training data set for a som from all objects"""
+    return pipe_scripts.make_som_data(input_dir, train_dir, train_file)
 
 
 @pipe_cli.command()

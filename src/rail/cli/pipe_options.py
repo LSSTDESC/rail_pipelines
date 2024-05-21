@@ -19,10 +19,13 @@ __all__ = [
     "model_dir",
     "model_name",
     "model_path",
+    "output_dir",
     "pdf_dir",
+    "pdf_path",
     "run_mode",
     "train_dir",
     "train_file",
+    "truth_path",
 ]
 
 
@@ -39,6 +42,8 @@ config_path = PartialOption(
     help="Path to configuration file",
     type=click.Path(),
 )
+
+
 
 input_dir = PartialOption(
     "--input_dir",
@@ -75,10 +80,23 @@ model_name = PartialOption(
     type=str,
 )
 
+output_dir = PartialOption(
+    "--output_dir",
+    help="Path to for output files",
+    type=click.Path(),
+)
+
 
 pdf_dir = PartialOption(
     "--pdf_dir",
     help="Path to directory with p(z) files",
+    type=click.Path(),
+)
+
+
+pdf_path = PartialOption(
+    "--pdf_path",
+    help="Path to p(z) estimate file",
     type=click.Path(),
 )
 
@@ -111,3 +129,11 @@ train_file = PartialOption(
     type=click.Path(),
     help="Training file for ML algorithms",
 )
+
+
+truth_path = PartialOption(
+    "--truth_path",
+    help="Path to truth redshift file",
+    type=click.Path(),
+)
+

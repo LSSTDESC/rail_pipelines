@@ -29,8 +29,6 @@ class InformPipeline(RailPipeline):
 
         DS = RailStage.data_store
         DS.__class__.allow_overwrite = True
-        bands = ['u','g','r','i','z','y']
-        #band_list = [f'mag_{band}_lsst' for band in bands] + [f'mag_err_{band}_lsst' for band in bands]
         
         self.inform_trainz = TrainZInformer.build(
             model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_trainz.pkl"),
@@ -57,12 +55,10 @@ class InformPipeline(RailPipeline):
             hdf5_groupname='',
         )
 
-        """
         self.inform_bpz = BPZliteInformer.build(
-            model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_bpz.hdf5"),
+            model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_bpz.pkl"),
              hdf5_groupname='',
         )
-        """
         
         """
         self.inform_delight = DelightInformer.build(
@@ -76,12 +72,26 @@ class InformPipeline(RailPipeline):
             hdf5_groupname='',
         )
         
-        """
         self.inform_gpz = GPzInformer.build(
-            model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_gpz.hdf5"),
-             hdf5_groupname='',
+            model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_gpz.pkl"),
+            hdf5_groupname='',
         )
-        """
+
+        self.inform_pzflow = PZFlowInformer.build(
+            model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_pzflow.pkl"),
+            hdf5_groupname='',
+        )
+        
+        self.inform_tpz = TPZliteInformer.build(
+            model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_tpz.pkl"),
+            hdf5_groupname='',
+        )
+        
+        self.inform_lephare = LephareInformer.build(
+            model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), "model_lephare.pkl"),
+            hdf5_groupname='',
+        )
+        
         
 
 if __name__ == '__main__':    
