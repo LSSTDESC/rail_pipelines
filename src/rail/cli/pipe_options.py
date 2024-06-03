@@ -15,6 +15,7 @@ __all__ = [
     "RunMode",
     "config_path",
     "input_dir",
+    "input_file",
     "maglim",
     "model_dir",
     "model_name",
@@ -23,9 +24,10 @@ __all__ = [
     "pdf_dir",
     "pdf_path",
     "run_mode",
-    "train_dir",
-    "train_file",
+    "output_dir",
+    "output_file",
     "truth_path",
+    "seed",
 ]
 
 
@@ -49,6 +51,13 @@ input_dir = PartialOption(
     "--input_dir",
     help="Input Directory",
     type=click.Path(),
+)
+
+
+input_file = PartialOption(
+    "--input_file",
+    type=click.Path(),
+    help="Input file",
 )
 
 
@@ -117,17 +126,17 @@ size = PartialOption(
 )
 
 
-train_dir = PartialOption(
-    "--train_dir",
+output_dir = PartialOption(
+    "--output_dir",
     type=click.Path(),
-    help="Path to directory for training file for ML algorithms",
+    help="Path to directory for output",
 )
 
 
-train_file = PartialOption(
-    "--train_file",
+output_file = PartialOption(
+    "--output_file",
     type=click.Path(),
-    help="Training file for ML algorithms",
+    help="Output file",
 )
 
 
@@ -137,3 +146,8 @@ truth_path = PartialOption(
     type=click.Path(),
 )
 
+seed = PartialOption(
+    "--seed",
+    help="Random seed",
+    type=int,
+)

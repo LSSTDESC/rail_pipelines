@@ -22,35 +22,37 @@ def truth_to_observed_pipeline(input_dir, config_path, outdir, run_mode):
 
 
 @pipe_cli.command(name="inform")
-@pipe_options.train_file()
+@pipe_options.input_file()
 @pipe_options.config_path()
 @pipe_options.model_dir()
 @pipe_options.run_mode()
-def inform_single(train_file, config_path, model_dir, run_mode):
+def inform_single(input_file, config_path, model_dir, run_mode):
     """Inform the model for a single algorithm"""
-    return pipe_scripts.inform_single(train_file, config_path, model_dir, run_mode)
+    return pipe_scripts.inform_single(input_file, config_path, model_dir, run_mode)
 
 
 @pipe_cli.command(name="estimate")
-@pipe_options.input_dir()
+@pipe_options.input_file()
 @pipe_options.config_path()
 @pipe_options.pdf_dir()
 @pipe_options.model_name()
 @pipe_options.model_path()
 @pipe_options.run_mode()
-def estimate_single(input_dir, config_path, pdf_dir, model_name, model_path, run_mode):
+def estimate_single(input_file, config_path, pdf_dir, model_name, model_path, run_mode):
     """Run the estimation stage for a single algorithm"""
-    return pipe_scripts.estimate_single(input_dir, config_path, pdf_dir, model_name, model_path, run_mode)
+    return pipe_scripts.estimate_single(input_file, config_path, pdf_dir, model_name, model_path, run_mode)
+
 
 @pipe_cli.command(name="estimate-all")
 @pipe_options.input_dir()
+@pipe_options.input_file()
 @pipe_options.config_path()
 @pipe_options.pdf_dir()
 @pipe_options.model_dir()
 @pipe_options.run_mode()
-def estimate_all(input_dir, config_path, pdf_dir, model_dir, run_mode):
+def estimate_all(input_dir, input_file, config_path, pdf_dir, model_dir, run_mode):
     """Run the estimation stage for all algorithms"""
-    return pipe_scripts.estimate_all(input_dir, config_path, pdf_dir, model_dir, run_mode)
+    return pipe_scripts.estimate_all(input_dir, input_file, config_path, pdf_dir, model_dir, run_mode)
 
 
 @pipe_cli.command(name="evaluate")
@@ -64,23 +66,37 @@ def evaluate_single(config_path, pdf_path, truth_path, output_dir, run_mode):
     return pipe_scripts.evaluate_single(config_path, pdf_path, truth_path, output_dir, run_mode)
 
 
-@pipe_cli.command()
+@pipe_cli.command(name="make-training-data")
 @pipe_options.input_dir()
-@pipe_options.train_dir()
-@pipe_options.train_file()
+@pipe_options.output_dir()
+@pipe_options.output_file()
 @pipe_options.size()
-def make_training_data(input_dir, train_dir, train_file, size):
+@pipe_options.seed()
+def subsample_data(input_dir, output_dir, output_file, size, seed):
     """Make a training data set by randomly selecting objects"""
-    return pipe_scripts.make_training_data(input_dir, train_dir, train_file, size)
+    return pipe_scripts.subsample_data(input_dir, output_dir, output_file, size, seed=seed, label="train")
 
 
-@pipe_cli.command()
+@pipe_cli.command(name="make-testing-data")
 @pipe_options.input_dir()
-@pipe_options.train_dir()
-@pipe_options.train_file()
-def make_som_data(input_dir, train_dir, train_file):
-    """Make a training data set for a som from all objects"""
-    return pipe_scripts.make_som_data(input_dir, train_dir, train_file)
+@pipe_options.output_dir()
+@pipe_options.output_file()
+@pipe_options.size()
+@pipe_options.seed()
+def subsample_data(input_dir, output_dir, output_file, size, seed):
+    """Make a testing data set by randomly selecting objects"""
+    return pipe_scripts.subsample_data(input_dir, output_dir, output_file, size, seed=seed, label="test")
+
+
+# NOTE brief testing shows that using all of the data isn't necessarily better
+# than using a subset. This is quite expensive, so commenting out for now.
+# @pipe_cli.command()
+# @pipe_options.input_dir()
+# @pipe_options.output_dir()
+# @pipe_options.output_file()
+# def make_som_data(input_dir, output_dir, output_file):
+#     """Make a training data set for a som from all objects"""
+#     return pipe_scripts.make_som_data(input_dir, output_dir, output_file)
 
 
 @pipe_cli.command()
