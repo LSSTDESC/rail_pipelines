@@ -37,6 +37,12 @@ COLUMNS = [
 
 PROJECTIONS = [
     {
+        "mag_u_lsst": pc.field("LSST_obs_u"),
+        "mag_g_lsst": pc.field("LSST_obs_g"),
+        "mag_r_lsst": pc.field("LSST_obs_r"),
+        "mag_i_lsst": pc.field("LSST_obs_i"),
+        "mag_z_lsst": pc.field("LSST_obs_z"),
+        "mag_y_lsst": pc.field("LSST_obs_y"),
         "totalHalfLightRadiusArcsec": pc.add(
             pc.multiply(
                 pc.field("diskHalfLightRadiusArcsec"),
