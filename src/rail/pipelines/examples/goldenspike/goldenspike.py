@@ -23,6 +23,10 @@ flow_file = os.path.join(RAILDIR, 'rail/examples_data/goldenspike_data/data/pret
 
 class GoldenspikePipeline(RailPipeline):
 
+    default_input_dict = dict(
+        model=flow_file,
+    )
+    
     def __init__(self):
         RailPipeline.__init__(self)
 
@@ -174,10 +178,3 @@ class GoldenspikePipeline(RailPipeline):
             output=os.path.join(namer.get_data_dir(DataType.pdfs, PdfType.nz), "output_naive_stack_test.hdf5"),
             single_NZ=os.path.join(namer.get_data_dir(DataType.pdfs, PdfType.nz), "single_NZ_naive_stack_test.hdf5"),
         )
-
-
-
-if __name__ == '__main__':    
-    pipe = GoldenspikePipeline()
-    pipe.initialize(dict(model=flow_file), dict(output_dir='.', log_dir='.', resume=False), None)
-    pipe.save('tmp_goldenspike.yml')
