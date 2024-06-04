@@ -36,85 +36,85 @@ class GoldenspikePipeline(RailPipeline):
             model=flow_file,
             n_samples=50,
             seed=1235,
-            output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.created), "output_flow_engine_train.pq"),
+            output=os.path.join(namer.get_data_dir(DataType.catalogs, CatalogType.truth), "output_flow_engine_train.pq"),
         )
 
         self.lsst_error_model_train = LSSTErrorModel.build(
             connections=dict(input=self.flow_engine_train.io.output),    
             renameDict=band_dict, seed=29,
-            output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_lsst_error_model_train.pq"),
+            output=os.path.join(namer.get_data_dir(DataType.catalogs, CatalogType.degraded), "output_lsst_error_model_train.pq"),
         )
 
         self.inv_redshift = InvRedshiftIncompleteness.build(
             connections=dict(input=self.lsst_error_model_train.io.output),
             pivot_redshift=1.0,
-            output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_inv_redshift.pq"),
+            output=os.path.join(namer.get_data_dir(DataType.catalogs, CatalogType.degraded), "output_inv_redshift.pq"),
         )
 
         self.line_confusion = LineConfusion.build(
             connections=dict(input=self.inv_redshift.io.output),
             true_wavelen=5007., wrong_wavelen=3727., frac_wrong=0.05,
-            output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_line_confusion.pq"),
+            output=os.path.join(namer.get_data_dir(DataType.catalogs, CatalogType.degraded), "output_line_confusion.pq"),
         )
 
         self.quantity_cut = QuantityCut.build(
             connections=dict(input=self.line_confusion.io.output),
             cuts={'mag_i_lsst': 25.0},
-            output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_quantity_cut.pq"),
+            output=os.path.join(namer.get_data_dir(DataType.catalogs, CatalogType.degraded), "output_quantity_cut.pq"),
         )
 
         self.col_remapper_train = ColumnMapper.build(
             connections=dict(input=self.quantity_cut.io.output),
             columns=rename_dict,
-            output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_col_remapper_train.pq"),
+            output=os.path.join(namer.get_data_dir(DataType.catalogs, CatalogType.degraded), "output_col_remapper_train.pq"),
         )
 
         self.table_conv_train = TableConverter.build(
             connections=dict(input=self.col_remapper_train.io.output),
             output_format='numpyDict',
-            output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_table_conv_train.hdf5"),
+            output=os.path.join(namer.get_data_dir(DataType.catalogs, CatalogType.degraded), "output_table_conv_train.hdf5"),
         )
 
         self.flow_engine_test = FlowCreator.build(
             model=flow_file,
             n_samples=50,
-            output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_flow_engine_test.pq"),
+            output=os.path.join(namer.get_data_dir(DataType.catalogs, CatalogType.degraded), "output_flow_engine_test.pq"),
         )
 
         self.lsst_error_model_test = LSSTErrorModel.build(
             connections=dict(input=self.flow_engine_test.io.output),
             bandNames=band_dict,
-            output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_lsst_error_model_test.pq"),
+            output=os.path.join(namer.get_data_dir(DataType.catalogs, CatalogType.degraded), "output_lsst_error_model_test.pq"),
         )
 
         self.col_remapper_test = ColumnMapper.build(
             connections=dict(input=self.lsst_error_model_test.io.output),
             columns=rename_dict,
-            output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_col_remapper_test.pq"),
+            output=os.path.join(namer.get_data_dir(DataType.catalogs, CatalogType.degraded), "output_col_remapper_test.pq"),
         )
 
         self.table_conv_test = TableConverter.build(
             connections=dict(input=self.col_remapper_test.io.output),
             output_format='numpyDict',
-            output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_table_conv_test.hdf5"),
+            output=os.path.join(namer.get_data_dir(DataType.catalogs, CatalogType.degraded), "output_table_conv_test.hdf5"),
         )
 
         self.inform_knn = KNearNeighInformer.build(
             connections=dict(input=self.table_conv_train.io.output),
             nondetect_val=np.nan,
-            model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), 'knnpz.pkl'),
+            model=os.path.join(namer.get_data_dir(DataType.models, ModelType.estimator), 'knnpz.pkl'),
             hdf5_groupname=''
         )
 
         self.inform_fzboost = FlexZBoostInformer.build(
             connections=dict(input=self.table_conv_train.io.output),
-            model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), 'fzboost.pkl'),
+            model=os.path.join(namer.get_data_dir(DataType.models, ModelType.estimator), 'fzboost.pkl'),
             hdf5_groupname=''
         )
 
         self.inform_bpz = BPZliteInformer.build(
             connections=dict(input=self.table_conv_train.io.output),
-            model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), 'trained_BPZ.pkl'),
+            model=os.path.join(namer.get_data_dir(DataType.models, ModelType.estimator), 'trained_BPZ.pkl'),
             hdf5_groupname='',
             nt_array=[8],
             mmax=26.,
@@ -127,7 +127,7 @@ class GoldenspikePipeline(RailPipeline):
                 model=self.inform_bpz.io.model,
             ),
             hdf5_groupname='',
-            output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_estimate_bpz.hdf5"),
+            output=os.path.join(namer.get_data_dir(DataType.pdfs, PdfType.pz), "output_estimate_bpz.hdf5"),
         )
 
         self.estimate_knn = KNearNeighEstimator.build(
@@ -137,7 +137,7 @@ class GoldenspikePipeline(RailPipeline):
             ),
             hdf5_groupname='',
             nondetect_val=np.nan,
-            output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_estimate_knn.hdf5"),
+            output=os.path.join(namer.get_data_dir(DataType.pdfs, PdfType.pz), "output_estimate_knn.hdf5"),
         )
 
         self.estimate_fzboost = FlexZBoostEstimator.build(
@@ -147,7 +147,7 @@ class GoldenspikePipeline(RailPipeline):
             ),
             nondetect_val=np.nan,
             hdf5_groupname='',
-            output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_estimate_FZBoost.hdf5"),
+            output=os.path.join(namer.get_data_dir(DataType.pdfs, PdfType.pz), "output_estimate_FZBoost.hdf5"),
         )
 
         eval_dict = dict(bpz=self.estimate_bpz, fzboost=self.estimate_fzboost, knn=self.estimate_knn)
@@ -158,21 +158,21 @@ class GoldenspikePipeline(RailPipeline):
                     input=val.io.output,
                     truth=self.flow_engine_train.io.output,
                 ),
-                output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), f"output_{key}_eval.pq"),
+                output=os.path.join(namer.get_data_dir(DataType.pdfs, PdfType.pz), f"output_{key}_eval.pq"),
                 force_exact=True,
             )
             self.add_stage(the_eval)
 
         self.point_estimate_test = PointEstHistSummarizer.build(
             connections=dict(input=self.estimate_bpz.io.output),
-            output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.nz), "output_point_estimate_test.hdf5"),
-            single_NZ=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.nz), "single_NZ_point_estimate_test.hdf5"),
+            output=os.path.join(namer.get_data_dir(DataType.pdfs, PdfType.nz), "output_point_estimate_test.hdf5"),
+            single_NZ=os.path.join(namer.get_data_dir(DataType.pdfs, PdfType.nz), "single_NZ_point_estimate_test.hdf5"),
         )
 
         self.naive_stack_test = NaiveStackSummarizer.build(
             connections=dict(input=self.estimate_bpz.io.output),
-            output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.nz), "output_naive_stack_test.hdf5"),
-            single_NZ=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.nz), "single_NZ_naive_stack_test.hdf5"),
+            output=os.path.join(namer.get_data_dir(DataType.pdfs, PdfType.nz), "output_naive_stack_test.hdf5"),
+            single_NZ=os.path.join(namer.get_data_dir(DataType.pdfs, PdfType.nz), "single_NZ_naive_stack_test.hdf5"),
         )
 
 
