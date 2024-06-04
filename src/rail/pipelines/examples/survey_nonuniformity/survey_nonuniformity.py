@@ -21,6 +21,8 @@ flow_file = os.path.join(RAILDIR, 'rail/examples_data/goldenspike_data/data/pret
 
 
 class SurveyNonuniformDegraderPipeline(RailPipeline):
+
+    default_input_dict = dict(model=flow_file)
     
     def __init__(self):
         RailPipeline.__init__(self)
@@ -36,37 +38,37 @@ class SurveyNonuniformDegraderPipeline(RailPipeline):
         self.flow_engine_train = FlowCreator.build(
             model=flow_file,
             n_samples=10,
-            output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.created), "output_flow_engine_train.pq"),
+            output=os.path.join(namer.get_data_dir(DataType.catalogs, CatalogType.truth), "output_flow_engine_train.pq"),
         )
         
         self.obs_condition = ObsCondition.build(
             connections=dict(input=self.flow_engine_train.io.output), 
-            output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_obscondition.pq"),
+            output=os.path.join(namer.get_data_dir(DataType.catalogs, CatalogType.degraded), "output_obscondition.pq"),
         )
         
         self.col_remapper = ColumnMapper.build(
             connections=dict(input=self.obs_condition.io.output),
             columns=rename_dict,
-            output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_col_remapper.pq"),
+            output=os.path.join(namer.get_data_dir(DataType.catalogs, CatalogType.degraded), "output_col_remapper.pq"),
         )
         
         ### Estimation steps:
         self.deredden = Dereddener.build(
             connections=dict(input=self.col_remapper.io.output),
             dustmap_dir=".",
-            output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_deredden.pq"),
+            output=os.path.join(namer.get_data_dir(DataType.catalogs, CatalogType.degraded), "output_deredden.pq"),
         )
         
         ### convert table into hdf5 format for estimation
         self.table_conv = TableConverter.build(
             connections=dict(input=self.deredden.io.output),
             output_format='numpyDict',
-            output=os.path.join(namer.get_data_dir(DataType.catalog, CatalogType.degraded), "output_table_conv.hdf5"),
+            output=os.path.join(namer.get_data_dir(DataType.catalogs, CatalogType.degraded), "output_table_conv.hdf5"),
         )
         
         self.inform_bpz = BPZliteInformer.build(
             connections=dict(input=self.table_conv.io.output),
-            model=os.path.join(namer.get_data_dir(DataType.model, ModelType.estimator), 'trained_BPZ.pkl'),
+            model=os.path.join(namer.get_data_dir(DataType.models, ModelType.estimator), 'trained_BPZ.pkl'),
             hdf5_groupname='',
             nt_array=[8],
             mmax=26.,
@@ -77,17 +79,11 @@ class SurveyNonuniformDegraderPipeline(RailPipeline):
             connections=dict(input=self.table_conv.io.output,
                             model=self.inform_bpz.io.model,),
             hdf5_groupname='',
-            output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_estimate_bpz.hdf5"),
+            output=os.path.join(namer.get_data_dir(DataType.pdfs, PdfType.pz), "output_estimate_bpz.hdf5"),
         )
         
         ### Tomographic binning
         self.tomopraphy = UniformBinningClassifier.build(
             connections=dict(input=self.estimate_bpz.io.output),
-            output=os.path.join(namer.get_data_dir(DataType.pdf, PdfType.pz), "output_tomography.hdf5"),
+            output=os.path.join(namer.get_data_dir(DataType.pdfs, PdfType.pz), "output_tomography.hdf5"),
         )
-        
-        
-if __name__ == '__main__':
-    pipe = SurveyNonuniformDegraderPipeline()
-    pipe.initialize(dict(model=flow_file), dict(output_dir='.', log_dir='.', resume=False), None)
-    pipe.save('tmp_survey_nonuniformity.yml')
