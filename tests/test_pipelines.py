@@ -1,19 +1,30 @@
 import os
-from rail.pipelines.examples.goldenspike.goldenspike import GoldenspikePipeline
-from rail.pipelines.utils.name_factory import NameFactory, DataType, CatalogType, ModelType, PdfType
-from rail.core.stage import RailStage, RailPipeline
-from rail.utils.path_utils import RAILDIR
+from rail.cli.scripts import build_pipeline
+import ceci
+
+import pytest
 
 
-def test_golden():
-    namer = NameFactory()
-    flow_file = os.path.join(RAILDIR, 'rail/examples_data/goldenspike_data/data/pretrained_flow.pkl')
-    output_dir = namer.get_project_dir('.', 'tmp_test', 'tmp_test')
-    try:
-        os.makedirs(output_dir)
-    except OSError:  # pragma: no cover
-        pass    
-    pipe = GoldenspikePipeline()
-    pipe.initialize(dict(model=flow_file), dict(output_dir=output_dir, log_dir=output_dir, resume=False), None)
-    pipe.save('tmp_goldenspike.yml')
-    os.system(f"\\rm -rf {output_dir}")
+@pytest.mark.parametrize(
+    "pipeline_class",
+    [
+        'rail.pipelines.estimation.estimate_all.EstimatePipeline',
+        'rail.pipelines.estimation.inform_all.InformPipeline',
+        'rail.pipelines.estimation.pz_all.PzPipeline',
+        'rail.pipelines.examples.goldenspike.goldenspike.GoldenspikePipeline',
+        'rail.pipelines.examples.survey_nonuniformity.survey_nonuniformity.SurveyNonuniformDegraderPipeline',
+    ]
+)
+def test_build_and_read_pipeline(pipeline_class):
+    short_name = pipeline_class.split('.')[-1]
+    yaml_file = f"{short_name}.yml"
+    config_yaml_file = f"{short_name}_config.yml"
+    build_pipeline(pipeline_class, yaml_file, 'rubin')
+    pr = ceci.Pipeline.read(yaml_file)    
+    os.unlink(yaml_file)
+    os.unlink(config_yaml_file)
+
+
+
+    
+
