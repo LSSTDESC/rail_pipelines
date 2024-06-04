@@ -10,7 +10,7 @@ import rail.stages
 rail.stages.import_and_attach_all()
 from rail.stages import *
 
-from rail.pipelines.utils.name_factory import NameFactory, DataType, CatalogType, ModelType, PdfType
+from rail.utils.name_utils import NameFactory, DataType, CatalogType, ModelType, PdfType
 from rail.core.stage import RailStage, RailPipeline
 
 import ceci
