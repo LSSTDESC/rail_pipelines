@@ -39,6 +39,12 @@ class RunMode(enum.Enum):
     slurm = 2
 
 
+config_file = PartialArgument(
+    "config_file",
+    type=click.Path(),
+)
+
+
 config_path = PartialOption(
     "--config_path",
     help="Path to configuration file",

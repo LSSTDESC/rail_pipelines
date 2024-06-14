@@ -1,27 +1,183 @@
+import copy
 import os
 import sys
 import glob
 import subprocess
 from pathlib import Path
+import pprint
+import time
+import functools
+import itertools
 
 import numpy as np
 import pyarrow.parquet as pq
 import pyarrow.dataset as ds
 import yaml
 
+from rail.utils import name_utils
 from .pipe_options import RunMode
 
 
-# data_dir=${PZ_BASE_AREA}/data
-# model_top = os.path.expandvars("${PZ_BASE_AREA}/models")
-# pdf_dir = os.path.expandvars("${PZ_BASE_AREA}/pdfs/roman_rubin_2023_v1.1.3_curated")
-# for healpix in Path("/sdf/data/rubin/shared/pz/data/roman_rubin_2023_v1.1.3_curated").glob("*"):
-# train_file = "/sdf/data/rubin/shared/pz/data/training/roman_rubin_2023_v1.1.3_parquet_healpixel_maglim_25.5_observed_100k.pq",
+class RAILProject:
+    config_template = {
+        "IterationVars": {},
+        "CommonPaths": {},
+        "PathTemplates": {},
+        "InputCatalog": {},
+        "ReducedCatalog": {},
+        "ObservedCatalog": {},
+        "Files": {},
+        "Pipelines": {},
+        "Flavors": {},
+        "Selections": {},
+        "PZAlgorithms": {},
+        "NZAlgorithms": {},
+    }
+
+    def __init__(self, project, config_dict):
+        self.project = project
+        self._config_dict = config_dict
+        self.config = copy.deepcopy(self.config_template)
+        for k in self.config.keys():
+            if (v := self._config_dict.get(k)) is not None:
+                self.config[k] = v
+        self.interpolants = self.get_interpolants()
+        self.name_factory = name_utils.NameFactory(
+            project=self.project,
+            config=self.config,
+        )
+
+    @staticmethod
+    def load_config(config_file):
+        project_name = Path(config_file).stem
+        with open(config_file, "r") as fp:
+            config_dict = yaml.safe_load(fp)
+        project = RAILProject(project_name, config_dict)
+        project.resolve_common()
+        return project
+
+    def get_interpolants(self):
+        interpolants = {}
+
+        if (common_dict := self.config.get("CommonPaths")) is not None:
+            for key, value in common_dict.items():
+                new_value = value.format(**interpolants)
+                interpolants[key] = new_value
+
+        return interpolants
+
+    def resolve_common(self):
+        resolved = {}
+        for target in ["CommonPaths"]:
+            done = self.name_factory.resolve(
+                self.config.get(target),
+                self.interpolants,
+            )
+            resolved[target] = done
+            self.config.get(target).update(done)
+
+        return resolved
+
+    def get_partial_templates(self):
+        resolved_templates = {}
+        path_templates = self.config.get("PathTemplates")
+        for k, v in path_templates.items():
+            resolved_templates[k] = functools.partial(
+                v.format
+            )
+
+        return resolved_templates
+
+    def get_flavors(self):
+        return self.config.get("Flavors")
+
+    def get_flavor(self, name):
+        flavors = self.get_flavors()
+        flavor = flavors.get(name, None)
+        if flavor is None:
+            raise ValueError(f"flavor '{name}' not found in {self.project}")
+        return flavor
+
+    def get_selections(self):
+        return self.config.get("Selections")
+
+    def get_selection(self, name):
+        selections = self.get_selections()
+        selection = selections.get(name, None)
+        if selection is None:
+            raise ValueError(f"selection '{name}' not found in {self.project}")
+        return selection
+
+    def get_pzalgorithms(self):
+        return self.config.get("PZAlgorithms")
+
+    def get_pzalgorithm(self, name):
+        pzalgorithms = self.get_pzalgorithms()
+        pzalgorithm = pzalgorithms.get(name, None)
+        if pzalgorithm is None:
+            raise ValueError(f"pz algorithm '{name}' not found in {self.project}")
+        return pzalgorithm
+
+    def get_nzalgorithms(self):
+        return self.config.get("NZAlgorithms")
+
+    def get_nzalgorithm(self, name):
+        nzalgorithms = self.get_nzalgorithms()
+        nzalgorithm = nzalgorithms.get(name, None)
+        if nzalgorithm is None:
+            raise ValueError(f"nz algorithm '{name}' not found in {self.project}")
+        return nzalgorithm
+
+    def _get_catalog(self, catalog, **kwargs):
+        if (input_catalog := self.config.get(catalog)) is not None:
+            if (path_template := input_catalog.get("PathTemplate")) is not None:
+                path = path_template.format(
+                    **self.config["CommonPaths"],
+                    **kwargs,
+                )
+        else:
+            path = None
+
+        return path
+
+    def get_input_catalog(self, **kwargs):
+        return self._get_catalog("InputCatalog", **kwargs)
+
+    def get_reduced_catalog(self, **kwargs):
+        return self._get_catalog("ReducedCatalog", **kwargs)
+
+    def get_observed_catalog(self, **kwargs):
+        return self._get_catalog("ObservedCatalog", **kwargs)
+
+    def get_pipelines(self):
+        return self.config.get("Pipelines")
+
+    def get_pipeline(self, name):
+        pipelines = self.get_pipelines()
+        pipeline_template = pipelines.get(name, None)
+        if pipeline_template is None:
+            raise ValueError(f"pipeline '{name}' not found in {self.project}")
+        pipeline = {}
+        for k, v in pipeline_template.items():
+            match k:
+                case "IterationVars":
+                    # continue
+                    pipeline["IterationVars"] = v
+                case "PipelinePathTemplate":
+                    pipeline["PipelinePath"] = v.format(**self.config["CommonPaths"])
+                case "ConfigPathTemplate":
+                    pipeline["ConfigPath"] = v.format(**self.config["CommonPaths"])
+                case _:
+                    # pipeline[k] = v.format(**self.config["CommonPaths"])
+                    raise ValueError(f"Unexpected key '{k}' found in {self.project} pipeline {name}")
+
+        return pipeline
 
 
 def handle_command(run_mode, command_line):
-    print(f"subprocess:", *command_line)
-    print(f">>>>>>>>")
+    print("subprocess:", *command_line)
+    _start_time = time.time()
+    print(">>>>>>>>")
     if run_mode == RunMode.dry_run:
         # print(command_line)
         command_line.insert(0, "echo")
@@ -33,49 +189,99 @@ def handle_command(run_mode, command_line):
         raise NotImplementedError("Connection to slurm not yet implemented")
 
     returncode = finished.returncode
-    print(f"<<<<<<<<")
-    print(f"subprocess completed with status {returncode}")
+    _end_time = time.time()
+    _elapsed_time = _end_time - _start_time
+    print("<<<<<<<<")
+    print(f"subprocess completed with status {returncode} in {_elapsed_time} seconds")
     return returncode
 
 
+def inspect(config_file):
+    project = RAILProject.load_config(config_file)
+    printable_config = pprint.pformat(project.config)
+    print("RAIL Project")
+    print(f">>>>>>>>")
+    print(printable_config)
+    print("<<<<<<<<")
+    return 0
+
+
 def truth_to_observed_pipeline(
-    input_dir,
-    config_path,
+    config_file,
+    input_dir=None,
+    config_path=None,
     output_dir=None,
     run_mode=RunMode.bash,
 ):
+    project = RAILProject.load_config(config_file)
+    pipeline = project.get_pipeline("truth_to_observed")
+
+    source_catalogs = []
+    sink_catalogs = []
+    catalogs = []
+    if (iteration_vars := pipeline.get("IterationVars")) is not None:
+        iterations = itertools.product(
+            *[
+                project.config.get("IterationVars").get(iteration_var)
+                for iteration_var in iteration_vars
+            ]
+        )
+        for iteration_args in iterations:
+            iteration_kwargs = {
+                iteration_vars[i]: iteration_args[i]
+                for i in range(len(iteration_vars))
+            }
+
+            source_catalog = project.get_reduced_catalog(**iteration_kwargs)
+            sink_catalog = project.get_observed_catalog(**iteration_kwargs)
+            sink_dir = os.path.dirname(sink_catalog)
+
+            source_catalogs.append(source_catalog)
+            sink_catalogs.append(sink_catalog)
+
+            catalogs.append((source_catalog, sink_catalog))
+
+            try:
+                handle_command(run_mode, ["mkdir", "-p", f"{sink_dir}"])
+                handle_command(run_mode, ["ceci", f"{pipeline['PipelinePath']}", f"config={pipeline['ConfigPath']}", f"inputs.input={source_catalog}", f"output_dir={sink_dir}", f"log_dir={sink_dir}"])
+                handle_command(run_mode, ["tables-io", "convert", f"{sink_dir}/output_dereddener.pq", f"{sink_dir}/output.hdf5"])
+            except Exception as msg:
+                print(msg)
+                return 1
+            return 0
+
     # config_name = os.path.splitext(os.path.basename(config_path))[0]
-    config_name = Path(config_path).stem
-    config_dir = Path(config_path).parent
-    with open(config_path, "r") as fp:
-        config_dict = yaml.safe_load(fp)
-        config_file = config_dict["config"]
-    if output_dir is None:
-        input_path = Path(input_dir)
-        input_base = input_path.parent
-        input_name = input_path.name
-        # output_name = input_name + "_curated"
-        output_name = input_name + "_" + config_name
-        _output_dir = str(input_base / output_name)
-        # output_dir = f"{data_dir}/{config_name}"
+    # config_name = Path(config_path).stem
+    # config_dir = Path(config_path).parent
+    # with open(config_path, "r") as fp:
+    #     config_dict = yaml.safe_load(fp)
+    #     config_file = config_dict["config"]
+    # if output_dir is None:
+    #     input_path = Path(input_dir)
+    #     input_base = input_path.parent
+    #     input_name = input_path.name
+    #     # output_name = input_name + "_curated"
+    #     output_name = input_name + "_" + config_name
+    #     _output_dir = str(input_base / output_name)
+    #     # output_dir = f"{data_dir}/{config_name}"
 
-    for healpix_path in glob.glob(f"{input_dir}/*"):
-        healpix=os.path.basename(healpix_path)
-        for input_path in glob.glob(f"{healpix_path}/*.parquet"):
-            output_dir = f"{_output_dir}/{healpix}"
+    # for healpix_path in glob.glob(f"{input_dir}/*"):
+    #     healpix=os.path.basename(healpix_path)
+    #     for input_path in glob.glob(f"{healpix_path}/*.parquet"):
+    #         output_dir = f"{_output_dir}/{healpix}"
 
-        try:
-            # handle_command(run_mode, f"mkdir -p {output_dir}")
-            # handle_command(run_mode, f"ceci {config_path} inputs.input={input_path} output_dir={output_dir} log_dir={output_dir}")
-            # handle_command(run_mode, f"convert-table {output_dir}/output_dereddener.pq {output_dir}/output.hdf5")
-            handle_command(run_mode, ["mkdir", "-p", f"{output_dir}"])
-            # handle_command(run_mode, ["ceci", f"{config_path}", f"inputs.input={input_path}", f"output_dir={output_dir}", f"log_dir={output_dir}"])
-            handle_command(run_mode, ["ceci", f"{config_path}", f"config={config_dir}/{config_file}", f"inputs.input={input_path}", f"output_dir={output_dir}", f"log_dir={output_dir}"])
-            handle_command(run_mode, ["tables-io", "convert", f"{output_dir}/output_dereddener.pq", f"{output_dir}/output.hdf5"])
-        except Exception as msg:
-            print(msg)
-            return 1
-    return 0
+    #     try:
+    #         # handle_command(run_mode, f"mkdir -p {output_dir}")
+    #         # handle_command(run_mode, f"ceci {config_path} inputs.input={input_path} output_dir={output_dir} log_dir={output_dir}")
+    #         # handle_command(run_mode, f"convert-table {output_dir}/output_dereddener.pq {output_dir}/output.hdf5")
+    #         handle_command(run_mode, ["mkdir", "-p", f"{output_dir}"])
+    #         # handle_command(run_mode, ["ceci", f"{config_path}", f"inputs.input={input_path}", f"output_dir={output_dir}", f"log_dir={output_dir}"])
+    #         handle_command(run_mode, ["ceci", f"{config_path}", f"config={config_dir}/{config_file}", f"inputs.input={input_path}", f"output_dir={output_dir}", f"log_dir={output_dir}"])
+    #         handle_command(run_mode, ["tables-io", "convert", f"{output_dir}/output_dereddener.pq", f"{output_dir}/output.hdf5"])
+    #     except Exception as msg:
+    #         print(msg)
+    #         return 1
+    # return 0
 
 
 def inform_single(
@@ -173,13 +379,13 @@ def estimate_all(
             f'output_dir={output_dir}',
             f'log_dir={output_dir}',
         ]
-        command_line += model_commands        
+        command_line += model_commands
         try:
             handle_command(run_mode, command_line)
         except Exception as msg:
             print(msg)
             return 1
-        
+
     input_dirs = glob.glob(f'{input_dir}/*')
     for input_dir_ in input_dirs:
         healpixel = os.path.basename(input_dir_)
@@ -308,6 +514,6 @@ def make_som_data(
             ii = i + 1
             print(f"writing batch {ii}", end="\r")
             writer.write_batch(batch)
-
+        print("")
     print("done")
     return 0

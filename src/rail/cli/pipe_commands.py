@@ -11,14 +11,21 @@ def pipe_cli() -> None:
     """RAIL pipeline scripts"""
 
 
+@pipe_cli.command(name="inspect")
+@pipe_options.config_file()
+def inspect(config_file):
+    """Inspect a rail pipeline project config"""
+    return pipe_scripts.inspect(config_file)
+
 @pipe_cli.command(name="truth-to-observed")
+@pipe_options.config_file()
 @pipe_options.input_dir()
 @pipe_options.config_path()
 @options.outdir()
 @pipe_options.run_mode()
-def truth_to_observed_pipeline(input_dir, config_path, outdir, run_mode):
+def truth_to_observed_pipeline(config_file, input_dir, config_path, outdir, run_mode):
     """Run the truth-to-observed data pipeline"""
-    return pipe_scripts.truth_to_observed_pipeline(input_dir, config_path, outdir, run_mode)
+    return pipe_scripts.truth_to_observed_pipeline(config_file, input_dir, config_path, outdir, run_mode)
 
 
 @pipe_cli.command(name="inform")
