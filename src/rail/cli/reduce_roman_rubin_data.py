@@ -1,10 +1,15 @@
 import math
 from pathlib import Path
+import itertools
+import os
 
 import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.dataset as ds
+import pyarrow.parquet as pq
 from pyarrow import acero
+
+from rail.cli.pipe_scripts import RAILProject
 
 
 COLUMNS = [
@@ -32,7 +37,7 @@ COLUMNS = [
     "diskHalfLightRadiusArcsec",
     "spheroidHalfLightRadiusArcsec",
     "bulge_frac",
-    "healpix",
+    # "healpix",
 ]
 
 PROJECTIONS = [
@@ -84,73 +89,127 @@ PROJECTIONS = [
 
 
 def reduce_roman_rubin_data(
-    input_dir,
-    maglim = 25.5,
+    config_file,
+    input_dir=None,
+    maglim=25.5,
 ):
+    project = RAILProject.load_config(config_file)
 
-    predicate = pc.field("LSST_obs_i") < maglim
+    source_catalogs = []
+    sink_catalogs = []
+    catalogs = []
+    predicates = []
 
-    source_path = Path(input_dir)
-    dataset = ds.dataset(
-        input_dir,
-        format="parquet",
-        partitioning=["healpix"],
-    )
-
-    scan_node = acero.Declaration(
-        "scan",
-        acero.ScanNodeOptions(
-            dataset,
-            columns=COLUMNS,
-            filter=predicate,
-        ),
-    )
-
-    filter_node = acero.Declaration(
-        "filter",
-        acero.FilterNodeOptions(
-            predicate,
-        ),
-    )
-
-    column_projection = {
-        k: pc.field(k)
-        for k in COLUMNS
-    }
-    projection = column_projection
-    project_nodes = []
-    for _projection in PROJECTIONS:
-        for k, v in _projection.items():
-            projection[k] = v
-        project_node = acero.Declaration(
-            "project",
-            acero.ProjectNodeOptions(
-                [v for k, v in projection.items()],
-                names=[k for k, v in projection.items()],
-            )
+    # FIXME
+    iteration_vars = list(project.config.get("IterationVars").keys())
+    if iteration_vars is not None:
+        iterations = itertools.product(
+            *[
+                project.config.get("IterationVars").get(iteration_var)
+                for iteration_var in iteration_vars
+            ]
         )
-        project_nodes.append(project_node)
+        for iteration_args in iterations:
+            iteration_kwargs = {
+                iteration_vars[i]: iteration_args[i]
+                for i in range(len(iteration_vars))
+            }
 
-    seq = [
-        scan_node,
-        filter_node,
-        *project_nodes,
-    ]
-    plan = acero.Declaration.from_sequence(seq)
-    print(plan)
+            source_catalog = project.get_input_catalog(**iteration_kwargs)
+            sink_catalog = project.get_reduced_catalog(**iteration_kwargs)
+            sink_dir = os.path.dirname(sink_catalog)
+            if (selection_tag := iteration_kwargs.get("selection")) is not None:
+                selection = project.get_selection(selection_tag)
+                predicate = pc.field("LSST_obs_i") < selection["maglim_i"][1]
+            else:
+                predicate = None
 
-    batches = plan.to_reader(use_threads=True)
+            if not os.path.isfile(source_catalog):
+                raise ValueError(f"Input file {source_catalog} not found")
 
-    sink_path = source_path.parent / (source_path.name + f"_healpixel_maglim_{maglim}")
-    sink_dir = sink_path.as_posix()
-    print(f"writing dataset to {sink_dir}")
-    ds.write_dataset(
-        batches,
-        sink_dir,
-        format="parquet",
-        partitioning=["healpix"],
-        # max_rows_per_group=1024,
-        # max_rows_per_file=1024 * 100,
-        # max_rows_per_file=1024**2 * 100,
-    )
-    print(f"writing completed")
+            # FIXME properly warn
+            if os.path.isfile(sink_catalog):
+                # raise ValueError(f"Input file {source_catalog} not found")
+                print(f"Warning: output file {sink_catalog} found; may be rewritten...")
+
+            source_catalogs.append(source_catalog)
+            sink_catalogs.append(sink_catalog)
+
+            catalogs.append((source_catalog, sink_catalog))
+
+            predicates.append(predicate)
+
+            dataset = ds.dataset(
+                source_catalog,
+                # source_catalogs,
+                # input_dir,
+                format="parquet",
+                # partitioning=["healpix"],
+            )
+
+            scan_node = acero.Declaration(
+                "scan",
+                acero.ScanNodeOptions(
+                    dataset,
+                    columns=COLUMNS,
+                    filter=predicate,
+                ),
+            )
+
+            filter_node = acero.Declaration(
+                "filter",
+                acero.FilterNodeOptions(
+                    predicate,
+                ),
+            )
+
+            column_projection = {
+                k: pc.field(k)
+                for k in COLUMNS
+            }
+            projection = column_projection
+            project_nodes = []
+            for _projection in PROJECTIONS:
+                for k, v in _projection.items():
+                    projection[k] = v
+                project_node = acero.Declaration(
+                    "project",
+                    acero.ProjectNodeOptions(
+                        [v for k, v in projection.items()],
+                        names=[k for k, v in projection.items()],
+                    )
+                )
+                project_nodes.append(project_node)
+
+            seq = [
+                scan_node,
+                filter_node,
+                *project_nodes,
+            ]
+            plan = acero.Declaration.from_sequence(seq)
+            print(plan)
+
+            # batches = plan.to_reader(use_threads=True)
+            table = plan.to_table(use_threads=True)
+            print(f"writing dataset to {sink_catalog}")
+            os.makedirs(sink_dir, exist_ok=True)
+            pq.write_table(table, sink_catalog)
+
+            # sink_path = source_path.parent / (source_path.name + f"_healpixel_maglim_{maglim}")
+            # sink_dir = sink_path.as_posix()
+            # print(f"writing dataset to {sink_catalog}")
+            # ds.write_dataset(
+            #     batches,
+            #     # sink_dir,
+            #     sink_catalog,
+            #     format="parquet",
+            #     # partitioning=["healpix"],
+            #     # max_rows_per_group=1024,
+            #     # max_rows_per_file=1024 * 100,
+            #     # max_rows_per_file=1024**2 * 100,
+            # )
+            # with pq.ParquetWriter(sink_catalog, schema) as writer:
+            #     for batch in batches:
+            #         writer.write_batch(batch)
+
+        print(f"writing completed")

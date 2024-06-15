@@ -192,7 +192,7 @@ def handle_command(run_mode, command_line):
     _end_time = time.time()
     _elapsed_time = _end_time - _start_time
     print("<<<<<<<<")
-    print(f"subprocess completed with status {returncode} in {_elapsed_time} seconds")
+    print(f"subprocess completed with status {returncode} in {_elapsed_time} seconds\n")
     return returncode
 
 
@@ -241,47 +241,17 @@ def truth_to_observed_pipeline(
 
             catalogs.append((source_catalog, sink_catalog))
 
+            if not os.path.isfile(source_catalog):
+                raise ValueError(f"Input file {source_catalog} not found")
             try:
                 handle_command(run_mode, ["mkdir", "-p", f"{sink_dir}"])
                 handle_command(run_mode, ["ceci", f"{pipeline['PipelinePath']}", f"config={pipeline['ConfigPath']}", f"inputs.input={source_catalog}", f"output_dir={sink_dir}", f"log_dir={sink_dir}"])
-                handle_command(run_mode, ["tables-io", "convert", f"{sink_dir}/output_dereddener.pq", f"{sink_dir}/output.hdf5"])
+                handle_command(run_mode, ["tables-io", "convert", "--input", f"{sink_dir}/output_dereddener.pq", "--output", f"{sink_dir}/output.hdf5"])
             except Exception as msg:
                 print(msg)
                 return 1
-            return 0
-
-    # config_name = os.path.splitext(os.path.basename(config_path))[0]
-    # config_name = Path(config_path).stem
-    # config_dir = Path(config_path).parent
-    # with open(config_path, "r") as fp:
-    #     config_dict = yaml.safe_load(fp)
-    #     config_file = config_dict["config"]
-    # if output_dir is None:
-    #     input_path = Path(input_dir)
-    #     input_base = input_path.parent
-    #     input_name = input_path.name
-    #     # output_name = input_name + "_curated"
-    #     output_name = input_name + "_" + config_name
-    #     _output_dir = str(input_base / output_name)
-    #     # output_dir = f"{data_dir}/{config_name}"
-
-    # for healpix_path in glob.glob(f"{input_dir}/*"):
-    #     healpix=os.path.basename(healpix_path)
-    #     for input_path in glob.glob(f"{healpix_path}/*.parquet"):
-    #         output_dir = f"{_output_dir}/{healpix}"
-
-    #     try:
-    #         # handle_command(run_mode, f"mkdir -p {output_dir}")
-    #         # handle_command(run_mode, f"ceci {config_path} inputs.input={input_path} output_dir={output_dir} log_dir={output_dir}")
-    #         # handle_command(run_mode, f"convert-table {output_dir}/output_dereddener.pq {output_dir}/output.hdf5")
-    #         handle_command(run_mode, ["mkdir", "-p", f"{output_dir}"])
-    #         # handle_command(run_mode, ["ceci", f"{config_path}", f"inputs.input={input_path}", f"output_dir={output_dir}", f"log_dir={output_dir}"])
-    #         handle_command(run_mode, ["ceci", f"{config_path}", f"config={config_dir}/{config_file}", f"inputs.input={input_path}", f"output_dir={output_dir}", f"log_dir={output_dir}"])
-    #         handle_command(run_mode, ["tables-io", "convert", f"{output_dir}/output_dereddener.pq", f"{output_dir}/output.hdf5"])
-    #     except Exception as msg:
-    #         print(msg)
-    #         return 1
-    # return 0
+        return 0
+    # FIXME else: try to get catalogs w/o kwargs...
 
 
 def inform_single(

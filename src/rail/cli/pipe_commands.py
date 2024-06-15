@@ -107,10 +107,11 @@ def subsample_data(input_dir, output_dir, output_file, size, seed):
 
 
 @pipe_cli.command()
+@pipe_options.config_file()
 @pipe_options.input_dir()
 @pipe_options.maglim()
-def reduce_roman_rubin(input_dir, maglim):
+def reduce_roman_rubin(config_file, input_dir, maglim):
     """Reduce the roman rubin simulations for PZ analysis"""
-    reduce_roman_rubin_data(input_dir, maglim)
+    reduce_roman_rubin_data(config_file, input_dir, maglim)
 
 
