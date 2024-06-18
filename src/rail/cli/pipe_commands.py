@@ -29,13 +29,14 @@ def truth_to_observed_pipeline(config_file, input_dir, config_path, outdir, run_
 
 
 @pipe_cli.command(name="inform")
+@pipe_options.config_file()
 @pipe_options.input_file()
 @pipe_options.config_path()
 @pipe_options.model_dir()
 @pipe_options.run_mode()
-def inform_single(input_file, config_path, model_dir, run_mode):
+def inform(config_file, input_file, config_path, model_dir, run_mode):
     """Inform the model for a single algorithm"""
-    return pipe_scripts.inform_single(input_file, config_path, model_dir, run_mode)
+    return pipe_scripts.inform_pipeline(config_file, input_file, config_path, model_dir, run_mode)
 
 
 @pipe_cli.command(name="estimate")
@@ -74,25 +75,27 @@ def evaluate_single(config_path, pdf_path, truth_path, output_dir, run_mode):
 
 
 @pipe_cli.command(name="make-training-data")
+@pipe_options.config_file()
 @pipe_options.input_dir()
 @pipe_options.output_dir()
 @pipe_options.output_file()
 @pipe_options.size()
 @pipe_options.seed()
-def subsample_data(input_dir, output_dir, output_file, size, seed):
+def subsample_data(config_file, input_dir, output_dir, output_file, size, seed):
     """Make a training data set by randomly selecting objects"""
-    return pipe_scripts.subsample_data(input_dir, output_dir, output_file, size, seed=seed, label="train")
+    return pipe_scripts.subsample_data(config_file, input_dir, output_dir, output_file, size, seed=seed, label="train")
 
 
 @pipe_cli.command(name="make-testing-data")
+@pipe_options.config_file()
 @pipe_options.input_dir()
 @pipe_options.output_dir()
 @pipe_options.output_file()
 @pipe_options.size()
 @pipe_options.seed()
-def subsample_data(input_dir, output_dir, output_file, size, seed):
+def subsample_data(config_file, input_dir, output_dir, output_file, size, seed):
     """Make a testing data set by randomly selecting objects"""
-    return pipe_scripts.subsample_data(input_dir, output_dir, output_file, size, seed=seed, label="test")
+    return pipe_scripts.subsample_data(config_file, input_dir, output_dir, output_file, size, seed=seed, label="test")
 
 
 # NOTE brief testing shows that using all of the data isn't necessarily better
