@@ -10,13 +10,21 @@ import rail.stages
 rail.stages.import_and_attach_all()
 from rail.stages import *
 
-from rail.utils.name_utils import NameFactory, DataType, CatalogType, ModelType, PdfType
 from rail.core.stage import RailStage, RailPipeline
 
 import ceci
 
 
-namer = NameFactory()
+ALL_ALGORITHMS = dict(
+    train_z=dict(Inform='TrainZInformer', Estimate='TrainZEstimator'),
+    simplenn=dict(Inform='SklNeurNetInformer', Estimate='SklNeurNetEstimator'),
+    knn=dict(Inform='KNearNeighInformer', Estimate='KNearNeighEstimator'),
+    bpz=dict(Inform='BPZliteInformer', Estimate='BPZliteEstimator'),
+    fzboost=dict(Inform='FlexZBoostInformer', Estimate='FlexZBoostEstimator'),
+    gpz=dict(Inform='GPzInformer', Estimate='GPzEstimator'),
+    tpz=dict(Inform='TPZliteInformer', Estimate='TPZliteEstimator'),
+    #lephare=dict(Inform='LephareInformer', Estimate='LephareEstimator'),
+)
 
 
 shared_stage_opts = dict(
@@ -32,43 +40,48 @@ shared_stage_opts = dict(
 
 class EvaluationPipeline(RailPipeline):
 
-    def __init__(self, estimate_list):
+    default_input_dict={}
+
+    def __init__(self, self, namer, algorithms=None, selection="default", flavor="baseline"):
         RailPipeline.__init__(self)
 
         DS = RailStage.data_store
         DS.__class__.allow_overwrite = True
-        
-        metric_outdir = namer.get_data_dir(DataType.metric, PdfType.pz)
-        
-        for estimate_ in estimate_list:
+
+        if algorithms is None:
+            algorithms = ALL_ALGORITHMS
+
+        path_kwargs = dict(
+            selection=selection,
+            flavor=flavor,
+        )
+               
+        for key in algorithms.keys():
             the_eval = SingleEvaluator.make_and_connect(
-                name=f'evaluate_{estimate_}',
-                aliases=dict(input=f"input_evalute_{estimate_}"),
-                output=os.path.join(metric_outdir, f"evaluate_output_{estimate_}.pq"),
-                summary=os.path.join(metric_outdir, f"evaluate_summary_{estimate_}.pq"),
-                single_distribution_summary=os.path.join(metric_outdir, f"evaluate_single_distribution_summary_{estimate_}.hdf5"),
-                **shared_stage_opts,
+                name=f'evaluate_{key}',
+                aliases=dict(input=f"input_evalute_{key}"),
+                output=namer.resolve_path_template(
+                    'per_object_metrics_path',
+                    algorithm=key,
+                    **path_kwargs,
+                ),
+                summary=namer.resolve_path_template(
+                    'summary_value_metrics_path',
+                    algorithm=key,
+                    **path_kwargs,
+                ),
+                single_distribution_summary=namer.resolve_path_template(
+                    'summary_pdf_metrics_path',
+                    algorithm=key,
+                    **path_kwargs,
+                ),               
+                **shared_stage_opts,                
+            )
+            self.default_input_dict[f"input_evaluate_{key}"] = namer.resolve_path_template(
+                "pz_pdf_path",
+                algorithm=key,
+                **path_kwargs,
             )
             self.add_stage(the_eval)
 
 
-if __name__ == '__main__':
-
-    import argparse
-    parser = argparse.ArgumentParser(description=f"Set up evaluation pipeline")
-
-    parser.add_argument('-t', "--truth", action='store', default="dummy.in")
-    parser.add_argument('-e', "--estimates", action='append')
-
-    args = parser.parse_args()
-    
-    pipe = EvaluationPipeline(args.estimates)
-    input_dict = dict(
-        truth=args.truth,        
-    )
-
-    for estimate_ in args.estimates:
-        input_dict[f"input_evalute_{estimate_}"] = "dummy.in"
-        
-    pipe.initialize(input_dict, dict(output_dir='.', log_dir='.', resume=False), None)
-    pipe.save('tmp_evaluate_all.yml')
