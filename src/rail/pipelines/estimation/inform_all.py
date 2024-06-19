@@ -10,13 +10,11 @@ import rail.stages
 rail.stages.import_and_attach_all()
 from rail.stages import *
 
-from rail.utils.name_utils import NameFactory, DataType, CatalogType, ModelType, PdfType
+from rail.utils.name_utils import NameFactory
 from rail.core.stage import RailStage, RailPipeline
 
 import ceci
 
-
-namer = NameFactory()
 from rail.utils.path_utils import RAILDIR
 
 input_file = 'rubin_dm_dc2_example.pq'
@@ -38,7 +36,7 @@ class InformPipeline(RailPipeline):
 
     default_input_dict={'input':'dummy.in'}
 
-    def __init__(self, algorithms=None):
+    def __init__(self, namer, algorithms=None, selection="default", flavor="baseline"):
         RailPipeline.__init__(self)
 
         DS = RailStage.data_store
@@ -47,11 +45,21 @@ class InformPipeline(RailPipeline):
         if algorithms is None:
             algorithms = ALL_ALGORITHMS
 
+        path_kwargs = dict(
+            selection=selection,
+            flavor=flavor,
+        )
+
         for key, val in algorithms.items():
             the_class = ceci.PipelineStage.get_stage(val['Inform'])
             the_informer = the_class.make_and_connect(
                 name=f'inform_{key}',
-                model=os.path.join(namer.get_data_dir(DataType.models, ModelType.estimator), "model_knn.pkl"),
+                model=namer.resolve_path_template(
+                    "estimator_model_path",
+                    algorithm=key,
+                    model_suffix='.pkl',
+                    **path_kwargs,
+                ),
                 hdf5_groupname='',
             )
             self.add_stage(the_informer)

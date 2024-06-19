@@ -33,39 +33,7 @@ class RAILProject:
         "PZAlgorithms": {},
         "NZAlgorithms": {},
     }
-    path_templates = {
-        "root": os.getcwd(),
-        "project_root": os.path.join("{root}"),
-        "data_root": os.path.join("{root}"),
-        "project_dir": os.path.join(
-            "{project_root}",
-            "{project}",
-        ),
-        "project_data_dir": os.path.join(
-            "{data_root}",
-            "{project}",
-        ),
-        "catalogs_path": os.path.join(
-            "{project_data_dir}",
-            "catalogs",
-        ),
-        "pipelines_path": os.path.join(
-            "{project_dir}",
-            "pipelines",
-        ),
-        "models_path": os.path.join(
-            "{project_data_dir}",
-            "models",
-        ),
-        "pdfs_path": os.path.join(
-            "{project_data_dir}",
-            "pdfs",
-        ),
-        "metrics_path": os.path.join(
-            "{project_data_dir}",
-            "metrics",
-        ),
-    }
+ 
 
     def __init__(self, name, config_dict):
         self.name = name
@@ -77,7 +45,7 @@ class RAILProject:
         # self.interpolants = self.get_interpolants()
         self.name_factory = name_utils.NameFactory(
             config=self.config,
-            templates=self.path_templates,
+            templates=config_dict.get('PathTemplates', {}),
             interpolants=self.config.get("CommonPaths", {})
         )
         self.name_factory.resolve_from_config(
@@ -236,14 +204,12 @@ class RAILProject:
                     # continue
                     pipeline["IterationVars"] = v
                 case "PipelinePathTemplate":
-                    # pipeline["PipelinePath"] = v.format(**self.config["CommonPaths"])
                     pipeline["PipelinePath"] = self.name_factory.resolve_path(
                         pipeline_template,
                         "PipelinePathTemplate",
                         **kwargs,
                     )
                 case "ConfigPathTemplate":
-                    # pipeline["ConfigPath"] = v.format(**self.config["CommonPaths"])
                     pipeline["ConfigPath"] = self.name_factory.resolve_path(
                         pipeline_template,
                         "ConfigPathTemplate",
@@ -370,7 +336,7 @@ def inform_pipeline(
     # return 0
 
     project = RAILProject.load_config(config_file)
-
+    
     flavors = project.get_flavors()
     pzalgorithms = project.get_pzalgorithms()
     nzalgorithms = project.get_nzalgorithms()

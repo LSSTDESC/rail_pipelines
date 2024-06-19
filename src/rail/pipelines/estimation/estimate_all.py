@@ -10,14 +10,12 @@ import rail.stages
 rail.stages.import_and_attach_all()
 from rail.stages import *
 
-from rail.utils.name_utils import NameFactory, DataType, CatalogType, ModelType, PdfType
+from rail.utils.name_utils import NameFactory
 from rail.core.stage import RailStage, RailPipeline
 
 import ceci
 
 
-namer = NameFactory()
-from rail.utils.path_utils import RAILDIR
 
 input_file = 'rubin_dm_dc2_example.pq'
 
@@ -38,7 +36,7 @@ class EstimatePipeline(RailPipeline):
 
     default_input_dict={'input':'dummy.in'}
     
-    def __init__(self, algorithms=None):
+    def __init__(self, namer=None, algorithms=None, selection="default", flavor="baseline"):
 
         RailPipeline.__init__(self)
         
@@ -46,17 +44,33 @@ class EstimatePipeline(RailPipeline):
         DS.__class__.allow_overwrite = True
 
         if algorithms is None:
-            algorithms = ALL_ALGORITHMS
+            algorithms = ALL_ALGORITHMS.copy()
 
+        if namer is None:
+            namer = NameFactory()
+        path_kwargs = dict(
+            selection=selection,
+            flavor=flavor,
+        )
+ 
         for key, val in algorithms.items():
             the_class = ceci.PipelineStage.get_stage(val['Estimate'])
             the_estimator = the_class.make_and_connect(
                 name=f'estimate_{key}',
                 aliases=dict(model=f"model_{key}"),
-                output=os.path.join(namer.get_data_dir(DataType.pdfs, PdfType.pz), f"output_{key}.hdf5"),
+                output=namer.resolve_path_template(
+                    "pz_pdf_path",
+                    algorithm=key,
+                    **path_kwargs,
+                ),
                 hdf5_groupname='',
             )
-            self.default_input_dict[f"model_{key}"] = os.path.join(namer.get_data_dir(DataType.models, ModelType.estimator), f"model_{key}.pkl")
+            self.default_input_dict[f"model_{key}"] = namer.resolve_path_template(
+                "estimator_model_path",
+                algorithm=key,
+                model_suffix='.pkl',
+                **path_kwargs,
+            )
             self.add_stage(the_estimator)
 
             
