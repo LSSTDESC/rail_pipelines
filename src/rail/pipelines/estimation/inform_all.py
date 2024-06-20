@@ -36,7 +36,7 @@ class InformPipeline(RailPipeline):
 
     default_input_dict={'input':'dummy.in'}
 
-    def __init__(self, namer, algorithms=None, selection="default", flavor="baseline"):
+    def __init__(self, namer, algorithms=None):
         RailPipeline.__init__(self)
 
         DS = RailStage.data_store
@@ -45,21 +45,10 @@ class InformPipeline(RailPipeline):
         if algorithms is None:
             algorithms = ALL_ALGORITHMS
 
-        path_kwargs = dict(
-            selection=selection,
-            flavor=flavor,
-        )
-
         for key, val in algorithms.items():
             the_class = ceci.PipelineStage.get_stage(val['Inform'])
             the_informer = the_class.make_and_connect(
                 name=f'inform_{key}',
-                model=namer.resolve_path_template(
-                    "estimator_model_path",
-                    algorithm=key,
-                    model_suffix='.pkl',
-                    **path_kwargs,
-                ),
                 hdf5_groupname='',
             )
             self.add_stage(the_informer)

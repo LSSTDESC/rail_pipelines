@@ -51,7 +51,11 @@ class EvaluationPipeline(RailPipeline):
         if algorithms is None:
             algorithms = ALL_ALGORITHMS
 
-        path_kwargs = dict(
+        if namer is None:
+            namer = NameFactory()
+
+        pdfs_dir = namer.resolve_path_template(
+            'ceci_output_dir',
             selection=selection,
             flavor=flavor,
         )
@@ -59,29 +63,15 @@ class EvaluationPipeline(RailPipeline):
         for key in algorithms.keys():
             the_eval = SingleEvaluator.make_and_connect(
                 name=f'evaluate_{key}',
-                aliases=dict(input=f"input_evalute_{key}"),
-                output=namer.resolve_path_template(
-                    'per_object_metrics_path',
-                    algorithm=key,
-                    **path_kwargs,
-                ),
-                summary=namer.resolve_path_template(
-                    'summary_value_metrics_path',
-                    algorithm=key,
-                    **path_kwargs,
-                ),
-                single_distribution_summary=namer.resolve_path_template(
-                    'summary_pdf_metrics_path',
-                    algorithm=key,
-                    **path_kwargs,
-                ),               
+                aliases=dict(input=f"input_evalute_{key}"),                
                 **shared_stage_opts,                
             )
-            self.default_input_dict[f"input_evaluate_{key}"] = namer.resolve_path_template(
-                "pz_pdf_path",
-                algorithm=key,
-                **path_kwargs,
-            )
+            pdf_path = namer.resolve_path_template(
+                "ceci_file_path",                
+                stage=f'estimate_{key}',
+                tag='output',
+                suffix='.hdf5',
+            )            
+            self.default_input_dict[f"input_evaluate_{key}"] = os.path.join(pdfs_dir, pdf_path)
             self.add_stage(the_eval)
-
 

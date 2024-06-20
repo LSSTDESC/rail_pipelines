@@ -39,7 +39,7 @@ class PzPipeline(RailPipeline):
         'input_test':'dummy.in',
     }
 
-    def __init__(self, namer, algorithms=None, selection="default", flavor="baseline"):
+    def __init__(self, namer, algorithms=None):
         RailPipeline.__init__(self)
 
         DS = RailStage.data_store
@@ -48,22 +48,11 @@ class PzPipeline(RailPipeline):
         if algorithms is None:
             algorithms = ALL_ALGORITHMS
 
-        path_kwargs = dict(
-            selection=selection,
-            flavor=flavor,
-        )
-
         for key, val in algorithms.items():
             inform_class = ceci.PipelineStage.get_stage(val['Inform'])
             the_informer = inform_class.make_and_connect(
                 name=f'inform_{key}',
                 aliases=dict(input='input_train'),
-                model=namer.resolve_path_template(
-                    "estimator_model_path",
-                    algorithm=key,
-                    model_suffix='.pkl',
-                    **path_kwargs,
-                ),
                 hdf5_groupname='',
             )
             self.add_stage(the_informer)
@@ -74,11 +63,6 @@ class PzPipeline(RailPipeline):
                 aliases=dict(input='input_test'),
                 connections=dict(
                     model=the_informer.io.model,
-                ),
-                output=namer.resolve_path_template(
-                    "pz_pdf_path",
-                    algorithm=key,
-                    **path_kwargs,
                 ),
                 hdf5_groupname='',
             )
@@ -95,21 +79,6 @@ class PzPipeline(RailPipeline):
                 metrics=["all"],
                 metric_config=dict(brier=dict(limits=[0., 3.5])),
                 exclude_metrics=['rmse', 'ks', 'kld', 'cvm', 'ad', 'rbpe', 'outlier'],
-                output=namer.resolve_path_template(
-                    'per_object_metrics_path',
-                    algorithm=key,
-                    **path_kwargs,
-                ),
-                summary=namer.resolve_path_template(
-                    'summary_value_metrics_path',
-                    algorithm=key,
-                    **path_kwargs,
-                ),
-                single_distribution_summary=namer.resolve_path_template(
-                    'summary_pdf_metrics_path',
-                    algorithm=key,
-                    **path_kwargs,
-                ),
                 hdf5_groupname='',
             )
             self.add_stage(the_evaluator)
