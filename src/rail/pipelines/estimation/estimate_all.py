@@ -36,7 +36,7 @@ class EstimatePipeline(RailPipeline):
 
     default_input_dict={'input':'dummy.in'}
     
-    def __init__(self, namer=None, algorithms=None, selection="default", flavor="baseline"):
+    def __init__(self, namer=None, algorithms=None, selection='default', flavor='baseline'):
 
         RailPipeline.__init__(self)
         
@@ -48,29 +48,27 @@ class EstimatePipeline(RailPipeline):
 
         if namer is None:
             namer = NameFactory()
-        path_kwargs = dict(
+
+        models_dir = namer.resolve_path_template(
+            'ceci_output_dir',
             selection=selection,
             flavor=flavor,
         )
- 
+        
         for key, val in algorithms.items():
             the_class = ceci.PipelineStage.get_stage(val['Estimate'])
             the_estimator = the_class.make_and_connect(
                 name=f'estimate_{key}',
                 aliases=dict(model=f"model_{key}"),
-                output=namer.resolve_path_template(
-                    "pz_pdf_path",
-                    algorithm=key,
-                    **path_kwargs,
-                ),
                 hdf5_groupname='',
             )
-            self.default_input_dict[f"model_{key}"] = namer.resolve_path_template(
-                "estimator_model_path",
-                algorithm=key,
-                model_suffix='.pkl',
-                **path_kwargs,
+            model_path = namer.resolve_path_template(
+                "ceci_file_path",                
+                stage=f'inform_{key}',
+                tag='model',
+                suffix='.pkl',
             )
+            self.default_input_dict[f"model_{key}"] = os.path.join(models_dir, model_path)
             self.add_stage(the_estimator)
 
             
