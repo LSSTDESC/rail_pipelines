@@ -135,7 +135,7 @@ pdf_path = PartialOption(
 run_mode = PartialOption(
     "--run_mode",
     type=EnumChoice(RunMode),
-    default="dry_run",
+    default="bash",
     help="Mode to run script",
 )
 
