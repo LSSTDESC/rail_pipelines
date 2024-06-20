@@ -189,10 +189,14 @@ def estimate_single(
     pipeline_config = pipeline_path.replace('.yaml', '_config.yml')
     catalog_tag = pipeline_info['CatalogTag']
     input_file_alias = pipeline_info['InputFileAlias']
-    input_file = project.get_file_for_flavor(flavor, label, selection=selection)
+    input_file = project.get_file_for_flavor('baseline', label, selection=selection)
 
     sink_dir = project.get_path_template('ceci_output_dir', selection=selection, flavor=flavor)
     script_path = os.path.join(sink_dir, f"submit_{pipeline_name}.sh")
+
+    pz_algorithms = project.get_pzalgorithms()
+    model_overrides = [
+        f"inputs.model_{pz_algo_}={sink_dir}/model_inform_{pz_algo_}.pkl" for pz_algo_ in pz_algorithms.keys()]
 
     command_line = [
         f'ceci',
@@ -202,6 +206,7 @@ def estimate_single(
         f'output_dir={sink_dir}',
         f'log_dir={sink_dir}/logs',
     ]
+    command_line += model_overrides
     try:
         handle_commands(run_mode, [command_line], script_path)
     except Exception as msg:
