@@ -14,6 +14,7 @@ from rail.cli.options import (
 __all__ = [
     "RunMode",
     "config_path",
+    "flavor",    
     "input_dir",
     "input_file",
     "maglim",
@@ -24,6 +25,7 @@ __all__ = [
     "pdf_dir",
     "pdf_path",
     "run_mode",
+    "selection",
     "output_dir",
     "output_file",
     "truth_path",
@@ -51,6 +53,20 @@ config_path = PartialOption(
     type=click.Path(),
 )
 
+flavor = PartialOption(
+    "--flavor",
+    help="Pipeline configuraiton flavor",
+    type=str,
+    default="baseline",
+)
+
+
+selection = PartialOption(
+    "--selection",
+    help="Pipeline configuraiton flavor",
+    type=str,
+    default="maglim_25.5"
+)
 
 
 input_dir = PartialOption(

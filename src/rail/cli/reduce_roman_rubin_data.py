@@ -9,7 +9,7 @@ import pyarrow.dataset as ds
 import pyarrow.parquet as pq
 from pyarrow import acero
 
-from rail.cli.pipe_scripts import RAILProject
+from rail.cli.project import RailProject
 
 
 COLUMNS = [
@@ -93,7 +93,7 @@ def reduce_roman_rubin_data(
     input_dir=None,
     maglim=25.5,
 ):
-    project = RAILProject.load_config(config_file)
+    project = RailProject.load_config(config_file)
 
     source_catalogs = []
     sink_catalogs = []
@@ -115,8 +115,8 @@ def reduce_roman_rubin_data(
                 for i in range(len(iteration_vars))
             }
 
-            source_catalog = project.get_input_catalog(**iteration_kwargs)
-            sink_catalog = project.get_reduced_catalog(**iteration_kwargs)
+            source_catalog = project.get_catalog('truth', **iteration_kwargs)
+            sink_catalog = project.get_catalog('reduced', **iteration_kwargs)
             sink_dir = os.path.dirname(sink_catalog)
             if (selection_tag := iteration_kwargs.get("selection")) is not None:
                 selection = project.get_selection(selection_tag)

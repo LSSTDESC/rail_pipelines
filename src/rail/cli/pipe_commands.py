@@ -19,36 +19,30 @@ def inspect(config_file):
 
 @pipe_cli.command(name="truth-to-observed")
 @pipe_options.config_file()
-@pipe_options.input_dir()
-@pipe_options.config_path()
-@options.outdir()
 @pipe_options.run_mode()
-def truth_to_observed_pipeline(config_file, input_dir, config_path, outdir, run_mode):
+def truth_to_observed_pipeline(config_file, run_mode):
     """Run the truth-to-observed data pipeline"""
-    return pipe_scripts.truth_to_observed_pipeline(config_file, input_dir, config_path, outdir, run_mode)
+    return pipe_scripts.truth_to_observed_pipeline(config_file, run_mode)
 
 
 @pipe_cli.command(name="inform")
 @pipe_options.config_file()
-@pipe_options.input_file()
-@pipe_options.config_path()
-@pipe_options.model_dir()
+@pipe_options.flavor()
+@pipe_options.selection()
 @pipe_options.run_mode()
-def inform(config_file, input_file, config_path, model_dir, run_mode):
+def inform(config_file, **kwargs):
     """Inform the model for a single algorithm"""
-    return pipe_scripts.inform_pipeline(config_file, input_file, config_path, model_dir, run_mode)
+    return pipe_scripts.inform_pipeline(config_file, **kwargs)
 
 
 @pipe_cli.command(name="estimate")
-@pipe_options.input_file()
-@pipe_options.config_path()
-@pipe_options.pdf_dir()
-@pipe_options.model_name()
-@pipe_options.model_path()
+@pipe_options.config_file()
+@pipe_options.flavor()
+@pipe_options.selection()
 @pipe_options.run_mode()
-def estimate_single(input_file, config_path, pdf_dir, model_name, model_path, run_mode):
-    """Run the estimation stage for a single algorithm"""
-    return pipe_scripts.estimate_single(input_file, config_path, pdf_dir, model_name, model_path, run_mode)
+def estimate_single(config_file, **kwargs):
+    """Run the estimation stage on a single file"""
+    return pipe_scripts.estimate_single(config_file, **kwargs)
 
 
 @pipe_cli.command(name="estimate-all")
@@ -75,27 +69,21 @@ def evaluate_single(config_path, pdf_path, truth_path, output_dir, run_mode):
 
 
 @pipe_cli.command(name="make-training-data")
+@pipe_options.flavor()
+@pipe_options.selection()
 @pipe_options.config_file()
-@pipe_options.input_dir()
-@pipe_options.output_dir()
-@pipe_options.output_file()
-@pipe_options.size()
-@pipe_options.seed()
-def subsample_data(config_file, input_dir, output_dir, output_file, size, seed):
+def subsample_data(config_file, **kwargs):
     """Make a training data set by randomly selecting objects"""
-    return pipe_scripts.subsample_data(config_file, input_dir, output_dir, output_file, size, seed=seed, label="train")
+    return pipe_scripts.subsample_data(config_file, label="train_file", **kwargs)
 
 
 @pipe_cli.command(name="make-testing-data")
+@pipe_options.flavor()
+@pipe_options.selection()
 @pipe_options.config_file()
-@pipe_options.input_dir()
-@pipe_options.output_dir()
-@pipe_options.output_file()
-@pipe_options.size()
-@pipe_options.seed()
-def subsample_data(config_file, input_dir, output_dir, output_file, size, seed):
+def subsample_data(config_file, **kwargs):
     """Make a testing data set by randomly selecting objects"""
-    return pipe_scripts.subsample_data(config_file, input_dir, output_dir, output_file, size, seed=seed, label="test")
+    return pipe_scripts.subsample_data(config_file, label='test_file', **kwargs)
 
 
 # NOTE brief testing shows that using all of the data isn't necessarily better
@@ -116,5 +104,12 @@ def subsample_data(config_file, input_dir, output_dir, output_file, size, seed):
 def reduce_roman_rubin(config_file, input_dir, maglim):
     """Reduce the roman rubin simulations for PZ analysis"""
     reduce_roman_rubin_data(config_file, input_dir, maglim)
+
+
+@pipe_cli.command()
+@pipe_options.config_file()
+def build_pipelines(config_file):
+    """Reduce the roman rubin simulations for PZ analysis"""
+    pipe_scripts.build_pipelines(config_file)
 
 
