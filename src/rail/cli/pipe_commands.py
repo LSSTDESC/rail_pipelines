@@ -58,14 +58,13 @@ def estimate_all(input_dir, input_file, config_path, pdf_dir, model_dir, run_mod
 
 
 @pipe_cli.command(name="evaluate")
-@pipe_options.config_path()
-@pipe_options.pdf_path()
-@pipe_options.truth_path()
-@pipe_options.output_dir()
+@pipe_options.config_file()
+@pipe_options.flavor()
+@pipe_options.selection()
 @pipe_options.run_mode()
-def evaluate_single(config_path, pdf_path, truth_path, output_dir, run_mode):
+def evaluate_single(config_file, **kwargs):
     """Run the estimation stage for a single algorithm"""
-    return pipe_scripts.evaluate_single(config_path, pdf_path, truth_path, output_dir, run_mode)
+    return pipe_scripts.evaluate_single(config_file, **kwargs)
 
 
 @pipe_cli.command(name="make-training-data")

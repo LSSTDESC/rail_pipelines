@@ -58,7 +58,8 @@ def handle_commands(run_mode, command_lines, script_path=None):
     with open(script_path, 'w') as fout:
         fout.write("#!/usr/bin/bash\n\n")
         for command_ in command_lines:
-            fout.write(f"{command_}\n")
+            com_line = ' '.join(command_)
+            fout.write(f"{com_line}\n")
 
     script_log = script_path.replace('.sh', '.log')
     try:
@@ -280,29 +281,39 @@ def estimate_all(
 
 
 def evaluate_single(
-    config_path,
-    pdf_path,
-    truth_path,
-    output_dir,
+    config_file,
+    selection="maglim_25.5",
+    flavor="baseline",
+    label="test_file",    
     run_mode=RunMode.bash,
 ):
-    config_name = Path(config_path).stem
-    config_dir = Path(config_path).parent
-    with open(config_path, "r") as fp:
-        config_dict = yaml.safe_load(fp)
-        config_file = config_dict["config"]
+    project = RailProject.load_config(config_file)
+    pipeline_name = "evaluate"
+    pipeline_info = project.get_pipeline(pipeline_name)
+    pipeline_path = project.get_path_template('pipeline_path', pipeline=pipeline_name, flavor=flavor)
+    pipeline_config = pipeline_path.replace('.yaml', '_config.yml')
+    catalog_tag = pipeline_info['CatalogTag']
+    input_file_alias = pipeline_info['InputFileAlias']
+    input_file = project.get_file_for_flavor('baseline', label, selection=selection)
+
+    sink_dir = project.get_path_template('ceci_output_dir', selection=selection, flavor=flavor)
+    script_path = os.path.join(sink_dir, f"submit_{pipeline_name}.sh")
+
+    pz_algorithms = project.get_pzalgorithms()
+    model_overrides = [
+        f"inputs.input_evaluate_{pz_algo_}={sink_dir}/output_estimate_{pz_algo_}.hdf5" for pz_algo_ in pz_algorithms.keys()]
 
     command_line = [
         f'ceci',
-        f'{config_path}',
-        f'config={config_dir}/{config_file}',
-        f'inputs.input={pdf_path}',
-        f'inputs.truth={truth_path}',
-        f'output_dir={output_dir}',
-        f'log_dir={output_dir}',
+        f"{pipeline_path}",
+        f"config={pipeline_config}",
+        f'inputs.truth={input_file}',
+        f'output_dir={sink_dir}',
+        f'log_dir={sink_dir}/logs',
     ]
+    command_line += model_overrides
     try:
-        handle_command(run_mode, command_line)
+        handle_commands(run_mode, [command_line], script_path)
     except Exception as msg:
         print(msg)
         return 1
