@@ -355,6 +355,9 @@ def subsample_data(
         source_catalog = project.get_catalog(source_tag, selection=selection, flavor=flavor, **iteration_kwargs)    
         sources.append(source_catalog.replace('output.hdf5','output_dereddener_errors.pq'))
 
+    if run_mode == RunMode.slurm:
+        raise NotImplementedError("subsample_data not set up to run under slurm")
+
     dataset = ds.dataset(sources)
     num_rows = dataset.count_rows()
     print("num rows", num_rows)
@@ -363,14 +366,14 @@ def subsample_data(
     indices = rng.choice(num_rows, size=size, replace=False)
     subset = dataset.take(indices)
     print("writing", output)
-    os.makedirs(output_dir, exist_ok=True)
-    
-    pq.write_table(
-        subset,
-        output,
-    )
-    print("done")
 
+    if run_mode == RunMode.bash:    
+        os.makedirs(output_dir, exist_ok=True)    
+        pq.write_table(
+            subset,
+            output,
+        )
+    print("done")
     handle_command(run_mode, ["tables-io", "convert", "--input", f"{output}", "--output", f"{hdf5_output}"])
     return 0
 

@@ -17,6 +17,7 @@ __all__ = [
     "flavor",    
     "input_dir",
     "input_file",
+    "label",
     "maglim",
     "model_dir",
     "model_name",
@@ -61,9 +62,16 @@ flavor = PartialOption(
 )
 
 
+label = PartialOption(
+    "--label",
+    help="File label (e.g., 'test' or 'train')",
+    type=str,
+)
+
+
 selection = PartialOption(
     "--selection",
-    help="Pipeline configuraiton flavor",
+    help="Data selection",
     type=str,
     default="maglim_25.5"
 )
@@ -138,7 +146,6 @@ run_mode = PartialOption(
     default="bash",
     help="Mode to run script",
 )
-
 
 size = PartialOption(
     "--size",
