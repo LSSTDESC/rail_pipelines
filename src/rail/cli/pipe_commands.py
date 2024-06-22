@@ -20,26 +20,29 @@ def inspect(config_file):
 
 @pipe_cli.command()
 @pipe_options.config_file()
-def build_pipelines(config_file):
+@pipe_options.flavor()
+def build_pipelines(config_file, flavor, **kwargs):
     """Reduce the roman rubin simulations for PZ analysis"""
-    pipe_scripts.build_pipelines(config_file)
+    pipe_scripts.build_pipelines(config_file, flavor, **kwargs)
 
     
 @pipe_cli.command()
 @pipe_options.config_file()
-@pipe_options.input_dir()
-@pipe_options.maglim()
-def reduce_roman_rubin(config_file, input_dir, maglim):
+@pipe_options.selection()
+@pipe_options.run_mode()
+def reduce_roman_rubin(config_file, **kwargs):
     """Reduce the roman rubin simulations for PZ analysis"""
-    reduce_roman_rubin_data(config_file, input_dir, maglim)
+    return reduce_roman_rubin_data(config_file, **kwargs)
 
 
 @pipe_cli.command(name="truth-to-observed")
 @pipe_options.config_file()
+@pipe_options.selection()
+@pipe_options.flavor()
 @pipe_options.run_mode()
-def truth_to_observed_pipeline(config_file, run_mode):
+def truth_to_observed_pipeline(config_file, **kwargs):
     """Run the truth-to-observed data pipeline"""
-    return pipe_scripts.truth_to_observed_pipeline(config_file, run_mode)
+    return pipe_scripts.truth_to_observed_pipeline(config_file, **kwargs)
 
 
 @pipe_cli.command(name="subsample")

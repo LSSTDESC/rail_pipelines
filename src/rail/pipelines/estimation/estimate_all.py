@@ -39,7 +39,7 @@ class EstimatePipeline(RailPipeline):
     def __init__(self, namer=None, algorithms=None, selection='default', flavor='baseline'):
 
         RailPipeline.__init__(self)
-        
+
         DS = RailStage.data_store
         DS.__class__.allow_overwrite = True
 

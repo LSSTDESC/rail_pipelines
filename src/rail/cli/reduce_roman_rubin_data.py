@@ -10,6 +10,7 @@ import pyarrow.parquet as pq
 from pyarrow import acero
 
 from rail.cli.project import RailProject
+from .pipe_options import RunMode
 
 
 COLUMNS = [
@@ -90,8 +91,8 @@ PROJECTIONS = [
 
 def reduce_roman_rubin_data(
     config_file,
-    input_dir=None,
-    maglim=25.5,
+    selection,
+    run_mode=RunMode.bash,
 ):
     project = RailProject.load_config(config_file)
 
@@ -99,6 +100,12 @@ def reduce_roman_rubin_data(
     sink_catalogs = []
     catalogs = []
     predicates = []
+
+    if selection is not None:
+        selection_dict = project.get_selection(selection)
+    else:
+        selection_dict = {}
+        
 
     # FIXME
     iteration_vars = list(project.config.get("IterationVars").keys())
@@ -116,11 +123,10 @@ def reduce_roman_rubin_data(
             }
 
             source_catalog = project.get_catalog('truth', **iteration_kwargs)
-            sink_catalog = project.get_catalog('reduced', **iteration_kwargs)
+            sink_catalog = project.get_catalog('reduced', selection=selection, **iteration_kwargs)
             sink_dir = os.path.dirname(sink_catalog)
-            if (selection_tag := iteration_kwargs.get("selection")) is not None:
-                selection = project.get_selection(selection_tag)
-                predicate = pc.field("LSST_obs_i") < selection["maglim_i"][1]
+            if selection_dict:
+                predicate = pc.field("LSST_obs_i") < selection_dict["maglim_i"][1]
             else:
                 predicate = None
 
@@ -141,10 +147,7 @@ def reduce_roman_rubin_data(
 
             dataset = ds.dataset(
                 source_catalog,
-                # source_catalogs,
-                # input_dir,
                 format="parquet",
-                # partitioning=["healpix"],
             )
 
             scan_node = acero.Declaration(
@@ -194,22 +197,5 @@ def reduce_roman_rubin_data(
             print(f"writing dataset to {sink_catalog}")
             os.makedirs(sink_dir, exist_ok=True)
             pq.write_table(table, sink_catalog)
-
-            # sink_path = source_path.parent / (source_path.name + f"_healpixel_maglim_{maglim}")
-            # sink_dir = sink_path.as_posix()
-            # print(f"writing dataset to {sink_catalog}")
-            # ds.write_dataset(
-            #     batches,
-            #     # sink_dir,
-            #     sink_catalog,
-            #     format="parquet",
-            #     # partitioning=["healpix"],
-            #     # max_rows_per_group=1024,
-            #     # max_rows_per_file=1024 * 100,
-            #     # max_rows_per_file=1024**2 * 100,
-            # )
-            # with pq.ParquetWriter(sink_catalog, schema) as writer:
-            #     for batch in batches:
-            #         writer.write_batch(batch)
 
         print(f"writing completed")

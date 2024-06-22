@@ -33,16 +33,16 @@ shared_stage_opts = dict(
     hdf5_groupname="", 
     limits=[0, 3.5], 
     truth_point_estimates=['redshift'],
-    point_estimates=['mode'],
+    point_estimates=['zmode'],
 )
 
 
 
 class EvaluationPipeline(RailPipeline):
 
-    default_input_dict={}
+    default_input_dict=dict(truth='dummy.in')
 
-    def __init__(self, self, namer, algorithms=None, selection="default", flavor="baseline"):
+    def __init__(self, namer, algorithms=None, selection="default", flavor="baseline"):
         RailPipeline.__init__(self)
 
         DS = RailStage.data_store
@@ -63,7 +63,7 @@ class EvaluationPipeline(RailPipeline):
         for key in algorithms.keys():
             the_eval = SingleEvaluator.make_and_connect(
                 name=f'evaluate_{key}',
-                aliases=dict(input=f"input_evalute_{key}"),                
+                aliases=dict(input=f"input_evaluate_{key}"),                
                 **shared_stage_opts,                
             )
             pdf_path = namer.resolve_path_template(

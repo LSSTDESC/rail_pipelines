@@ -55,6 +55,11 @@ def handle_commands(run_mode, command_lines, script_path=None):
         raise ValueError(
             "handle_commands with run_mode == RunMode.slurm requires a path to a script to write",
         )
+
+    try:
+        os.makedirs(os.path.dirname(script_path))
+    except:
+        pass
     with open(script_path, 'w') as fout:
         fout.write("#!/usr/bin/bash\n\n")
         for command_ in command_lines:
@@ -86,12 +91,14 @@ def inspect(config_file):
 
 def truth_to_observed_pipeline(
     config_file,
+    selection,
+    flavor,
     run_mode=RunMode.bash,
 ):
     project = RailProject.load_config(config_file)
     pipeline_name = "truth_to_observed"
     pipeline_info = project.get_pipeline(pipeline_name)
-    pipeline_path = project.get_path_template('pipeline_path', pipeline=pipeline_name, flavor="baseline")
+    pipeline_path = project.get_path_template('pipeline_path', pipeline=pipeline_name, flavor=flavor)
     catalog_tag = pipeline_info['CatalogTag']
     input_catalog_name = pipeline_info['InputCatalog']
     input_catalog = project.get_catalogs().get(input_catalog_name)
@@ -111,10 +118,10 @@ def truth_to_observed_pipeline(
                 for i in range(len(iteration_vars))
             }
 
-            source_catalog = project.get_catalog('reduced', flavor='baseline', **iteration_kwargs)
-            sink_catalog = project.get_catalog('degraded', flavor='baseline', **iteration_kwargs)
+            source_catalog = project.get_catalog('reduced', selection=selection, **iteration_kwargs)
+            sink_catalog = project.get_catalog('degraded', selection=selection, flavor=flavor, **iteration_kwargs)
             sink_dir = os.path.dirname(sink_catalog)
-            script_path = os.path.join(sink_dir, f"submit_{pipeline_name}.sh")
+            script_path = os.path.join(sink_dir, f"submit_{pipeline_name}_{selection}_{flavor}.sh")
             
             if not os.path.isfile(source_catalog):
                 raise ValueError(f"Input file {source_catalog} not found")
@@ -151,8 +158,10 @@ def inform_pipeline(
     pipeline_path = project.get_path_template('pipeline_path', pipeline=pipeline_name, flavor=flavor)
     pipeline_config = project.get_path_template('pipeline_path', pipeline=pipeline_name, flavor=flavor).replace('.yaml', '_config.yml')
     catalog_tag = pipeline_info['CatalogTag']
-    input_file_alias = pipeline_info['InputFileAlias']
-    input_file = project.get_file_for_flavor('baseline', label, selection=selection)
+    flavor_info = project.get_flavor(flavor)
+    input_file_tag = pipeline_info['InputFileTag']
+    input_file_flavor = flavor_info.get('SubselectFlavor', 'baseline')
+    input_file = project.get_file_for_flavor(input_file_flavor, input_file_tag, selection=selection)
 
     # FIXME where is this specified in the project config?
     # we should provide an interface instead of just grabbing from the internal config dict...
@@ -189,8 +198,10 @@ def estimate_single(
     pipeline_path = project.get_path_template('pipeline_path', pipeline=pipeline_name, flavor=flavor)
     pipeline_config = pipeline_path.replace('.yaml', '_config.yml')
     catalog_tag = pipeline_info['CatalogTag']
-    input_file_alias = pipeline_info['InputFileAlias']
-    input_file = project.get_file_for_flavor('baseline', label, selection=selection)
+    flavor_info = project.get_flavor(flavor)
+    input_file_tag = pipeline_info['InputFileTag']
+    input_file_flavor = flavor_info.get('SubselectFlavor', 'baseline')
+    input_file = project.get_file_for_flavor(input_file_flavor, input_file_tag, selection=selection)
 
     sink_dir = project.get_path_template('ceci_output_dir', selection=selection, flavor=flavor)
     script_path = os.path.join(sink_dir, f"submit_{pipeline_name}.sh")
@@ -293,8 +304,10 @@ def evaluate_single(
     pipeline_path = project.get_path_template('pipeline_path', pipeline=pipeline_name, flavor=flavor)
     pipeline_config = pipeline_path.replace('.yaml', '_config.yml')
     catalog_tag = pipeline_info['CatalogTag']
-    input_file_alias = pipeline_info['InputFileAlias']
-    input_file = project.get_file_for_flavor('baseline', label, selection=selection)
+    flavor_info = project.get_flavor(flavor)
+    input_file_tag = pipeline_info['InputFileTag']
+    input_file_flavor = flavor_info.get('SubselectFlavor', 'baseline')
+    input_file = project.get_file_for_flavor(input_file_flavor, input_file_tag, selection=selection)
 
     sink_dir = project.get_path_template('ceci_output_dir', selection=selection, flavor=flavor)
     script_path = os.path.join(sink_dir, f"submit_{pipeline_name}.sh")
@@ -379,22 +392,44 @@ def subsample_data(
 
 
 
-def build_pipelines(config_file, catalog_tag=None, **kwargs):
+def build_pipelines(config_file, flavor='baseline', **kwargs):
 
     project = RailProject.load_config(config_file)
     output_dir = project.get_common_path('project_scratch_dir')
     namer = name_utils.NameFactory.build_from_yaml(config_file, relative=True)
-        
+    flavor_dict = project.get_flavor(flavor)
+    pipelines_to_build = flavor_dict['Pipelines']
+    pipeline_overrides = flavor_dict.get('PipelineOverrides', {})
+    do_all = 'all' in pipelines_to_build
+    
     for pipeline_name, pipeline_info in project.get_pipelines().items():
+        if not (do_all or pipeline_name in pipelines_to_build):
+            print(f"Skipping pipeline {pipeline_name} from flavor {flavor}")
+            continue
+        output_yaml = project.get_path_template('pipeline_path', pipeline=pipeline_name, flavor=flavor)
+        if os.path.exists(output_yaml):
+            print(f"Skipping existing pipeline {output_yaml}")
+            continue
 
-        output_yaml = project.get_path_template('pipeline_path', pipeline=pipeline_name, flavor='baseline')
         pipe_out_dir = os.path.dirname(output_yaml)
 
         try:
             os.makedirs(pipe_out_dir)
         except:
             pass
-        
+
+        overrides = pipeline_overrides.get('default', {})
+        overrides.update(**pipeline_overrides.get(pipeline_name, {}))
+
+        if overrides:
+            pipe_ctor_kwargs = overrides.pop('kwargs', {})
+            stages_config = os.path.join(pipe_out_dir, f"{pipeline_name}_{flavor}_overrides.yml")
+            with open(stages_config, 'w') as fout:
+                yaml.dump(overrides, fout)
+        else:
+            stages_config = None
+            pipe_ctor_kwargs = {}
+            
         pipeline_class = pipeline_info['PipelineClass']
         catalog_tag = pipeline_info['CatalogTag']
 
@@ -407,5 +442,5 @@ def build_pipelines(config_file, catalog_tag=None, **kwargs):
         log_dir = f"{output_dir}/logs/{pipeline_name}"
         
         __import__(module)        
-        RailPipeline.build_and_write(class_name, output_yaml, namer, kwargs, output_dir, log_dir)
+        RailPipeline.build_and_write(class_name, output_yaml, namer, kwargs, stages_config, output_dir, log_dir, **pipe_ctor_kwargs)
 

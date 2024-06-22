@@ -107,7 +107,7 @@ class RailProject:
             file_alias = flavor_dict['FileAliases'][alias]
         except KeyError as msg:
             raise ValueError(f"alias '{alias}' not found in flavor '{flavor}'")                           
-        return self.get_file(file_alias, flavor=flavor, **kwargs)
+        return self.get_file(file_alias, flavor=flavor, label=alias, **kwargs)
 
     def get_file_metadata_for_flavor(self, flavor, alias):
         flavor_dict = self.get_flavor(flavor)
