@@ -10,7 +10,6 @@ import rail.stages
 rail.stages.import_and_attach_all()
 from rail.stages import *
 
-from rail.utils.name_utils import NameFactory
 from rail.core.stage import RailStage, RailPipeline
 
 import ceci
@@ -36,7 +35,7 @@ class InformPipeline(RailPipeline):
 
     default_input_dict={'input':'dummy.in'}
 
-    def __init__(self, namer, algorithms=None):
+    def __init__(self, algorithms=None):
         RailPipeline.__init__(self)
 
         DS = RailStage.data_store

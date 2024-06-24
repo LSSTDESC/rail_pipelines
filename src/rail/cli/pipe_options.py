@@ -57,8 +57,8 @@ config_path = PartialOption(
 flavor = PartialOption(
     "--flavor",
     help="Pipeline configuraiton flavor",
-    type=str,
-    default="baseline",
+    multiple=True,
+    default=["baseline"],
 )
 
 
@@ -72,8 +72,8 @@ label = PartialOption(
 selection = PartialOption(
     "--selection",
     help="Data selection",
-    type=str,
-    default="maglim_25.5"
+    multiple=True,
+    default=["gold"],
 )
 
 

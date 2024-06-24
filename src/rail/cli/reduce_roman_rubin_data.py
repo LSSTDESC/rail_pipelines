@@ -90,11 +90,10 @@ PROJECTIONS = [
 
 
 def reduce_roman_rubin_data(
-    config_file,
+    project,
     selection,
     run_mode=RunMode.bash,
 ):
-    project = RailProject.load_config(config_file)
 
     source_catalogs = []
     sink_catalogs = []
@@ -199,3 +198,5 @@ def reduce_roman_rubin_data(
             pq.write_table(table, sink_catalog)
 
         print(f"writing completed")
+
+    return 0

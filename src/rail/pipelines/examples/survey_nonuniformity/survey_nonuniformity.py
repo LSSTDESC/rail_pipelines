@@ -20,8 +20,8 @@ flow_file = os.path.join(RAILDIR, 'rail/examples_data/goldenspike_data/data/pret
 class SurveyNonuniformDegraderPipeline(RailPipeline):
 
     default_input_dict = dict(model=flow_file)
-    
-    def __init__(self, namer=None):
+  
+    def __init__(self):
         RailPipeline.__init__(self)
         
         DS = RailStage.data_store

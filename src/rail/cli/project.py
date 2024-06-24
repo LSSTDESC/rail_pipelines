@@ -14,9 +14,8 @@ import pyarrow.parquet as pq
 import pyarrow.dataset as ds
 import yaml
 
-from rail.utils import name_utils
 from .pipe_options import RunMode
-
+from . import name_utils
 
 class RailProject:
     config_template = {
@@ -63,21 +62,27 @@ class RailProject:
         return project
 
     def get_path_templates(self):
+        """ Return the dictionary of templates used to construct paths """
         return self.name_factory.get_path_templates()
     
-    def get_path_template(self, path_key, **kwargs):
+    def get_path(self, path_key, **kwargs):
+        """ Resolve and return a path using the kwargs as interopolants """
         return self.name_factory.resolve_path_template(path_key, **kwargs)    
 
     def get_common_paths(self):
+        """ Return the dictionary of common paths """        
         return self.name_factory.get_common_paths()
     
     def get_common_path(self, path_key, **kwargs):
+        """ Resolve and return a common path using the kwargs as interopolants """       
         return self.name_factory.resolve_common_path(path_key, **kwargs)    
 
     def get_files(self):
+        """ Return the dictionary of specific files """        
         return self.config.get("Files")
 
     def get_file(self, name, **kwargs):
+        """ Resolve and return a file using the kwargs as interpolants """
         files = self.get_files()
         file_dict = files.get(name, None)
         if file_dict is None:
@@ -86,6 +91,7 @@ class RailProject:
         return path
 
     def get_flavors(self):
+        """ Return the dictionary of analysis flavor variants """
         flavors = self.config.get("Flavors")
         baseline = flavors.get("baseline", {})
         for k, v in flavors.items():
@@ -95,26 +101,35 @@ class RailProject:
         return flavors
 
     def get_flavor(self, name):
+        """ Resolve the configuration for a particular analysis flavor variant """
         flavors = self.get_flavors()
         flavor = flavors.get(name, None)
         if flavor is None:
             raise ValueError(f"flavor '{name}' not found in {self}")
         return flavor
 
-    def get_file_for_flavor(self, flavor, alias, **kwargs):
-        flavor_dict = self.get_flavor(flavor)
-        try:
-            file_alias = flavor_dict['FileAliases'][alias]
-        except KeyError as msg:
-            raise ValueError(f"alias '{alias}' not found in flavor '{flavor}'")                           
-        return self.get_file(file_alias, flavor=flavor, label=alias, **kwargs)
+    def get_file_for_flavor(self, flavor, label, **kwargs):
+        """ Resolve the file associated to a particular flavor and label 
 
-    def get_file_metadata_for_flavor(self, flavor, alias):
+        E.g., flavor=baseline and label=train would give the baseline training file
+        """       
         flavor_dict = self.get_flavor(flavor)
         try:
-            file_alias = flavor_dict['FileAliases'][alias]
+            file_alias = flavor_dict['FileAliases'][label]
         except KeyError as msg:
-            raise ValueError(f"alias '{alias}' not found in flavor '{flavor}'")                           
+            raise ValueError(f"Label '{label}' not found in flavor '{flavor}'")                           
+        return self.get_file(file_alias, flavor=flavor, label=label, **kwargs)
+
+    def get_file_metadata_for_flavor(self, flavor, label):
+        """ Resolve the metadata associated to a particular flavor and label 
+        
+        E.g., flavor=baseline and label=train would give the baseline training metadata
+        """
+        flavor_dict = self.get_flavor(flavor)
+        try:
+            file_alias = flavor_dict['FileAliases'][label]
+        except KeyError as msg:
+            raise ValueError(f"Label '{label}' not found in flavor '{flavor}'")                           
         return self.get_files()[file_alias]
     
     def get_selections(self):
@@ -162,5 +177,61 @@ class RailProject:
     def get_pipeline(self, name, **kwargs):
         pipelines = self.get_pipelines()
         return pipelines.get(name, None)
-        return pipeline
 
+    def get_flavor_args(self, flavors):
+        flavor_dict = self.get_flavors()
+        if 'all' in flavors:
+            return list(flavor_dict.keys())
+        return flavors
+    
+    def get_selection_args(self, selections):        
+        selection_dict = self.get_selections()
+        if 'all' in selections:
+            return list(selection_dict.keys())
+        return selections
+
+    def generate_kwargs_iterable(self, **iteration_dict):
+        iteration_vars = list(iteration_dict.keys())
+        iterations = itertools.product( 
+            *[
+                iteration_dict.get(key) for key in iteration_vars
+            ]
+        )
+        iteration_kwarg_list = []
+        for iteration_args in iterations:
+            iteration_kwargs = {
+                iteration_vars[i]: iteration_args[i]
+                for i in range(len(iteration_vars))
+            }
+            iteration_kwarg_list.append(iteration_kwargs)
+        return iteration_kwarg_list
+
+    def generate_ceci_command(
+        self,
+        pipeline_path,
+        config=None,    
+        inputs=None,
+        output_dir='.',
+        log_dir='.',
+        **kwargs,
+    ):
+
+        if config is None:
+            config = pipeline_path.replace('.yaml', '_config.yml')
+            
+        command_line = [
+            f"ceci",
+            f"{pipeline_path}",
+            f"config={config}",
+            f"output_dir={output_dir}",
+            f"log_dir={log_dir}",
+        ]
+
+        for key, val in inputs.items():
+            command_line.append(f"inputs.{key}={val}")
+
+        
+        for key, val in kwargs.items():
+            command_line.append(f"{key}={val}")
+
+        return command_line

@@ -42,7 +42,7 @@ class EvaluationPipeline(RailPipeline):
 
     default_input_dict=dict(truth='dummy.in')
 
-    def __init__(self, namer, algorithms=None, selection="default", flavor="baseline"):
+    def __init__(self, algorithms=None, pdfs_dir='.'):
         RailPipeline.__init__(self)
 
         DS = RailStage.data_store
@@ -50,9 +50,6 @@ class EvaluationPipeline(RailPipeline):
 
         if algorithms is None:
             algorithms = ALL_ALGORITHMS
-
-        if namer is None:
-            namer = NameFactory()
 
         pdfs_dir = namer.resolve_path_template(
             'ceci_output_dir',
@@ -66,12 +63,7 @@ class EvaluationPipeline(RailPipeline):
                 aliases=dict(input=f"input_evaluate_{key}"),                
                 **shared_stage_opts,                
             )
-            pdf_path = namer.resolve_path_template(
-                "ceci_file_path",                
-                stage=f'estimate_{key}',
-                tag='output',
-                suffix='.hdf5',
-            )            
+            pdf_path = f'estimate_output_{key}.hdf5'
             self.default_input_dict[f"input_evaluate_{key}"] = os.path.join(pdfs_dir, pdf_path)
             self.add_stage(the_eval)
 

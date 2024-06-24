@@ -32,6 +32,16 @@ ALL_ALGORITHMS = dict(
 )
 
 
+eval_shared_stage_opts = dict(
+    metrics=['all'], 
+    exclude_metrics=['rmse', 'ks', 'kld', 'cvm', 'ad', 'rbpe', 'outlier'],
+    hdf5_groupname="", 
+    limits=[0, 3.5], 
+    truth_point_estimates=['redshift'],
+    point_estimates=['zmode'],
+)
+
+
 class PzPipeline(RailPipeline):
 
     default_input_dict={
@@ -39,7 +49,7 @@ class PzPipeline(RailPipeline):
         'input_test':'dummy.in',
     }
 
-    def __init__(self, namer, algorithms=None):
+    def __init__(self, algorithms=None):
         RailPipeline.__init__(self)
 
         DS = RailStage.data_store
@@ -74,12 +84,7 @@ class PzPipeline(RailPipeline):
                 connections=dict(
                     input=the_estimator.io.output,
                 ),
-                point_estimates=['mode'],
-                truth_point_estimates=["redshift"],
-                metrics=["all"],
-                metric_config=dict(brier=dict(limits=[0., 3.5])),
-                exclude_metrics=['rmse', 'ks', 'kld', 'cvm', 'ad', 'rbpe', 'outlier'],
-                hdf5_groupname='',
+                **eval_shared_stage_opts,
             )
             self.add_stage(the_evaluator)
        

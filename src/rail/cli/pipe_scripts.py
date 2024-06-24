@@ -14,7 +14,7 @@ import pyarrow.parquet as pq
 import pyarrow.dataset as ds
 import yaml
 
-from rail.utils import name_utils, catalog_utils
+from rail.utils import catalog_utils
 from rail.core.stage import RailPipeline
 from .pipe_options import RunMode
 from .project import RailProject
@@ -90,19 +90,18 @@ def inspect(config_file):
 
 
 def truth_to_observed_pipeline(
-    config_file,
+    project,
     selection,
     flavor,
     run_mode=RunMode.bash,
 ):
-    project = RailProject.load_config(config_file)
     pipeline_name = "truth_to_observed"
     pipeline_info = project.get_pipeline(pipeline_name)
-    pipeline_path = project.get_path_template('pipeline_path', pipeline=pipeline_name, flavor=flavor)
-    catalog_tag = pipeline_info['CatalogTag']
-    input_catalog_name = pipeline_info['InputCatalog']
-    input_catalog = project.get_catalogs().get(input_catalog_name)
-    
+    pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, flavor=flavor)
+
+    input_catalog_name = pipeline_info['InputCatalogTag']
+    input_catalog = project.get_catalogs().get(input_catalog_name)        
+        
     # Loop through all possible combinations of the iteration variables that are
     # relevant to this pipeline
     if (iteration_vars := input_catalog.get("IterationVars")) is not None:
@@ -123,6 +122,14 @@ def truth_to_observed_pipeline(
             sink_dir = os.path.dirname(sink_catalog)
             script_path = os.path.join(sink_dir, f"submit_{pipeline_name}_{selection}_{flavor}.sh")
             
+            ceci_command = project.generate_ceci_command(
+                pipeline_path=pipeline_path,
+                config=pipeline_path.replace('.yaml', '_config.yml'),
+                inputs=dict(input=source_catalog),
+                output_dir=sink_dir,
+                log_dir=sink_dir,
+            )
+            
             if not os.path.isfile(source_catalog):
                 raise ValueError(f"Input file {source_catalog} not found")
             try:
@@ -130,7 +137,7 @@ def truth_to_observed_pipeline(
                     run_mode,
                     [
                         ["mkdir", "-p", f"{sink_dir}"],
-                        ["ceci", f"{pipeline_path}", f"inputs.input={source_catalog}", f"output_dir={sink_dir}", f"log_dir={sink_dir}"],
+                        ceci_command,
                         ["tables-io", "convert", "--input", f"{sink_dir}/output_dereddener_errors.pq", "--output", f"{sink_dir}/output.hdf5"]
                     ],
                     script_path,
@@ -145,37 +152,33 @@ def truth_to_observed_pipeline(
 
 
 def inform_pipeline(
-    config_file,
-    selection="maglim_25.5",
+    project,
+    selection="gold",
     flavor="baseline",
-    label="train_file",    
     run_mode=RunMode.bash,
 ):
 
-    project = RailProject.load_config(config_file)
     pipeline_name = "inform"
     pipeline_info = project.get_pipeline(pipeline_name)
-    pipeline_path = project.get_path_template('pipeline_path', pipeline=pipeline_name, flavor=flavor)
-    pipeline_config = project.get_path_template('pipeline_path', pipeline=pipeline_name, flavor=flavor).replace('.yaml', '_config.yml')
-    catalog_tag = pipeline_info['CatalogTag']
-    flavor_info = project.get_flavor(flavor)
-    input_file_tag = pipeline_info['InputFileTag']
-    input_file_flavor = flavor_info.get('SubselectFlavor', 'baseline')
-    input_file = project.get_file_for_flavor(input_file_flavor, input_file_tag, selection=selection)
-
-    # FIXME where is this specified in the project config?
-    # we should provide an interface instead of just grabbing from the internal config dict...
-    sink_dir = project.get_path_template('ceci_output_dir', selection=selection, flavor=flavor)
+    pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, flavor=flavor)
+    pipeline_config = pipeline_path.replace('.yaml', '_config.yml')
+    sink_dir = project.get_path('ceci_output_dir', selection=selection, flavor=flavor)
     script_path = os.path.join(sink_dir, f"submit_{pipeline_name}.sh")
 
-    command_line = [
-        f"ceci",
-        f"{pipeline_path}",
-        f"config={pipeline_config}",
-        f"inputs.input={input_file}",
-        f"output_dir={sink_dir}",
-        f"log_dir={sink_dir}/logs",
-    ]
+    input_files = {}
+    input_file_tags = pipeline_info['InputFileTags']
+    for key, val in input_file_tags.items():
+        input_file_flavor = val.get('flavor', 'baseline')
+        input_files[key] = project.get_file_for_flavor(input_file_flavor, val['tag'], selection=selection)
+
+    command_line = project.generate_ceci_command(
+        pipeline_path=pipeline_path,
+        config=pipeline_config,
+        inputs=input_files,
+        output_dir=sink_dir,
+        log_dir=f"{sink_dir}/logs",
+    )
+ 
     try:
         handle_commands(run_mode, [command_line], script_path)
     except Exception as msg:
@@ -185,146 +188,77 @@ def inform_pipeline(
 
 
 def estimate_single(
-    config_file,
-    selection="maglim_25.5",
+    project,
+    selection="gold",
     flavor="baseline",
-    label="test_file",    
     run_mode=RunMode.bash,
 ):
 
-    project = RailProject.load_config(config_file)
     pipeline_name = "estimate"
     pipeline_info = project.get_pipeline(pipeline_name)
-    pipeline_path = project.get_path_template('pipeline_path', pipeline=pipeline_name, flavor=flavor)
+    pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, flavor=flavor)
     pipeline_config = pipeline_path.replace('.yaml', '_config.yml')
-    catalog_tag = pipeline_info['CatalogTag']
-    flavor_info = project.get_flavor(flavor)
-    input_file_tag = pipeline_info['InputFileTag']
-    input_file_flavor = flavor_info.get('SubselectFlavor', 'baseline')
-    input_file = project.get_file_for_flavor(input_file_flavor, input_file_tag, selection=selection)
-
-    sink_dir = project.get_path_template('ceci_output_dir', selection=selection, flavor=flavor)
+    sink_dir = project.get_path('ceci_output_dir', selection=selection, flavor=flavor)
     script_path = os.path.join(sink_dir, f"submit_{pipeline_name}.sh")
+    
+    input_files = {}
+    input_file_tags = pipeline_info['InputFileTags']
+    for key, val in input_file_tags.items():
+        input_file_flavor = val.get('flavor', 'baseline')
+        input_files[key] = project.get_file_for_flavor(input_file_flavor, val['tag'], selection=selection)
 
     pz_algorithms = project.get_pzalgorithms()
-    model_overrides = [
-        f"inputs.model_{pz_algo_}={sink_dir}/model_inform_{pz_algo_}.pkl" for pz_algo_ in pz_algorithms.keys()]
-
-    command_line = [
-        f'ceci',
-        f"{pipeline_path}",
-        f"config={pipeline_config}",
-        f'inputs.input={input_file}',
-        f'output_dir={sink_dir}',
-        f'log_dir={sink_dir}/logs',
-    ]
-    command_line += model_overrides
+    for pz_algo_ in pz_algorithms.keys():
+        input_files[f"model_{pz_algo_}"] = os.path.join(sink_dir, f'inform_model_{pz_algo_}.pkl')                                                        
+                                                        
+    command_line = project.generate_ceci_command(
+        pipeline_path=pipeline_path,
+        config=pipeline_config,
+        inputs=input_files,
+        output_dir=sink_dir,
+        log_dir=f"{sink_dir}/logs",
+    )
+  
     try:
         handle_commands(run_mode, [command_line], script_path)
     except Exception as msg:
         print(msg)
         return 1
-    return 0
-
-
-def estimate_all(
-    input_dir,
-    input_file,
-    config_path,
-    pdf_dir,
-    model_dir,
-    run_mode=RunMode.bash,
-):
-    config_name = Path(config_path).stem
-    config_dir = Path(config_path).parent
-    with open(config_path, "r") as fp:
-        config_dict = yaml.safe_load(fp)
-        config_file = config_dict["config"]
-
-    model_path = Path(model_dir)
-    model_commands = []
-    for model_file in model_path.glob("*"):
-        model_name = model_file.stem.lower()
-        model_commands.append(
-            f'inputs.{model_name}={model_file}'
-        )
-
-    if input_file:
-        output_dir=f'{pdf_dir}/{config_name}'
-        input_path = input_file
-        command_line = [
-            f'ceci',
-            f'{config_path}',
-            f'config={config_dir}/{config_file}',
-            f'inputs.input={input_path}',
-            f'inputs.spec_input={input_path}',
-            f'output_dir={output_dir}',
-            f'log_dir={output_dir}',
-        ]
-        command_line += model_commands
-        try:
-            handle_command(run_mode, command_line)
-        except Exception as msg:
-            print(msg)
-            return 1
-
-    input_dirs = glob.glob(f'{input_dir}/*')
-    for input_dir_ in input_dirs:
-        healpixel = os.path.basename(input_dir_)
-        output_dir=f'{pdf_dir}/{config_name}/{healpixel}'
-        input_path = f'{input_dir_}/output.hdf5'
-        command_line = [
-            f'ceci',
-            f'{config_path}',
-            f'config={config_dir}/{config_file}',
-            f'inputs.input={input_path}',
-            f'inputs.spec_input={input_path}',
-            f'output_dir={output_dir}',
-            f'log_dir={output_dir}',
-        ]
-        command_line += model_commands
-        try:
-            handle_command(run_mode, command_line)
-        except Exception as msg:
-            print(msg)
-            return 1
     return 0
 
 
 def evaluate_single(
-    config_file,
-    selection="maglim_25.5",
+    project,
+    selection="gold",
     flavor="baseline",
-    label="test_file",    
     run_mode=RunMode.bash,
 ):
-    project = RailProject.load_config(config_file)
     pipeline_name = "evaluate"
     pipeline_info = project.get_pipeline(pipeline_name)
-    pipeline_path = project.get_path_template('pipeline_path', pipeline=pipeline_name, flavor=flavor)
+    pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, flavor=flavor)
     pipeline_config = pipeline_path.replace('.yaml', '_config.yml')
-    catalog_tag = pipeline_info['CatalogTag']
-    flavor_info = project.get_flavor(flavor)
-    input_file_tag = pipeline_info['InputFileTag']
-    input_file_flavor = flavor_info.get('SubselectFlavor', 'baseline')
-    input_file = project.get_file_for_flavor(input_file_flavor, input_file_tag, selection=selection)
-
-    sink_dir = project.get_path_template('ceci_output_dir', selection=selection, flavor=flavor)
+    sink_dir = project.get_path('ceci_output_dir', selection=selection, flavor=flavor)
     script_path = os.path.join(sink_dir, f"submit_{pipeline_name}.sh")
 
-    pz_algorithms = project.get_pzalgorithms()
-    model_overrides = [
-        f"inputs.input_evaluate_{pz_algo_}={sink_dir}/output_estimate_{pz_algo_}.hdf5" for pz_algo_ in pz_algorithms.keys()]
+    input_files = {}
+    input_file_tags = pipeline_info['InputFileTags']
+    for key, val in input_file_tags.items():
+        input_file_flavor = val.get('flavor', 'baseline')
+        input_files[key] = project.get_file_for_flavor(input_file_flavor, val['tag'], selection=selection)
 
-    command_line = [
-        f'ceci',
-        f"{pipeline_path}",
-        f"config={pipeline_config}",
-        f'inputs.truth={input_file}',
-        f'output_dir={sink_dir}',
-        f'log_dir={sink_dir}/logs',
-    ]
-    command_line += model_overrides
+    pdfs_dir = sink_dir
+    pz_algorithms = project.get_pzalgorithms()
+    for pz_algo_ in pz_algorithms.keys():
+        input_files[f"input_evaluate_{pz_algo_}"] = os.path.join(pdfs_dir, f'estimate_output_{key}.hdf5')
+        
+    
+    command_line = project.generate_ceci_command(
+        pipeline_path=pipeline_path,
+        config=pipeline_config,
+        inputs=input_files,
+        output_dir=sink_dir,
+        log_dir=f"{sink_dir}/logs",
+    )
     try:
         handle_commands(run_mode, [command_line], script_path)
     except Exception as msg:
@@ -333,16 +267,50 @@ def evaluate_single(
     return 0
 
 
+def pz_single(
+    project,
+    selection="gold",
+    flavor="baseline",
+    run_mode=RunMode.bash,
+):
+    pipeline_name = "pz"
+    pipeline_info = project.get_pipeline(pipeline_name)
+    pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, flavor=flavor)
+    pipeline_config = pipeline_path.replace('.yaml', '_config.yml')
+    sink_dir = project.get_path('ceci_output_dir', selection=selection, flavor=flavor)
+    script_path = os.path.join(sink_dir, f"submit_{pipeline_name}.sh")    
+    
+    input_files = {}
+    input_file_tags = pipeline_info['InputFileTags']
+    for key, val in input_file_tags.items():
+        input_file_flavor = val.get('flavor', 'baseline')
+        input_files[key] = project.get_file_for_flavor(input_file_flavor, val['tag'], selection=selection)
+        
+    command_line = project.generate_ceci_command(
+        pipeline_path=pipeline_path,
+        config=pipeline_config,
+        inputs=input_files,
+        output_dir=sink_dir,
+        log_dir=f"{sink_dir}/logs",
+    )
+    try:
+        handle_commands(run_mode, [command_line], script_path)
+    except Exception as msg:
+        print(msg)
+        return 1
+    return 0
+
+
+
 def subsample_data(
-    config_file,
+    project,
     source_tag="degraded",
-    selection="maglim_25.5",
+    selection="gold",
     flavor="baseline",
     label="train_file",
     run_mode=RunMode.bash,
 ):
 
-    project = RailProject.load_config(config_file)
     hdf5_output = project.get_file_for_flavor(flavor, label, selection=selection)
     output = hdf5_output.replace('.hdf5', '.parquet')
     output_metadata = project.get_file_metadata_for_flavor(flavor, label)
@@ -392,11 +360,9 @@ def subsample_data(
 
 
 
-def build_pipelines(config_file, flavor='baseline', **kwargs):
+def build_pipelines(project, flavor='baseline'):
 
-    project = RailProject.load_config(config_file)
     output_dir = project.get_common_path('project_scratch_dir')
-    namer = name_utils.NameFactory.build_from_yaml(config_file, relative=True)
     flavor_dict = project.get_flavor(flavor)
     pipelines_to_build = flavor_dict['Pipelines']
     pipeline_overrides = flavor_dict.get('PipelineOverrides', {})
@@ -406,7 +372,7 @@ def build_pipelines(config_file, flavor='baseline', **kwargs):
         if not (do_all or pipeline_name in pipelines_to_build):
             print(f"Skipping pipeline {pipeline_name} from flavor {flavor}")
             continue
-        output_yaml = project.get_path_template('pipeline_path', pipeline=pipeline_name, flavor=flavor)
+        output_yaml = project.get_path('pipeline_path', pipeline=pipeline_name, flavor=flavor)
         if os.path.exists(output_yaml):
             print(f"Skipping existing pipeline {output_yaml}")
             continue
@@ -442,5 +408,6 @@ def build_pipelines(config_file, flavor='baseline', **kwargs):
         log_dir = f"{output_dir}/logs/{pipeline_name}"
         
         __import__(module)        
-        RailPipeline.build_and_write(class_name, output_yaml, namer, kwargs, stages_config, output_dir, log_dir, **pipe_ctor_kwargs)
+        RailPipeline.build_and_write(class_name, output_yaml, None, stages_config, output_dir, log_dir, **pipe_ctor_kwargs)
 
+    return 0
