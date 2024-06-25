@@ -4,31 +4,49 @@ Utility code to help define standard paths for various data products
 
 import copy
 # import enum
-import os
 import re
-import yaml
 from functools import partial
+
+import yaml
+
+
+CommonPaths = dict(
+    root='.',
+    scratch_root='.',
+    project='',
+    project_dir='{root}/projects/{project}',
+    project_scratch_dir='{scratch_root}/projects/{project}',
+    catalogs_dir='{root}/catalogs',
+    pipelines_dir='{project_dir}/pipelines',
+)
+
+PathTemplates = dict(
+    pipeline_path="{pipelines_dir}/{pipeline}_{flavor}.yaml",
+    ceci_output_dir="{project_dir}/data/{selection}_{flavor}",
+    ceci_file_path="{tag}_{stage}.{suffix}",
+)
+
 
 
 def _get_required_interpolants(template):
-    """ Get the list of interpolants required to format a template string 
+    """ Get the list of interpolants required to format a template string
 
     Notes
     -----
-    'interpolants' are strings that must be replaced in to format a string, 
+    'interpolants' are strings that must be replaced in to format a string,
     e.g., in "{project_dir}/models" "{project_dir}" would an interpolant
     """
     return re.findall('{.*?}', template)
 
 
 def _format_template(template, **kwargs):
-    """ Resolve a specific template 
+    """ Resolve a specific template
 
-    This is fault-tolerant and will not raise KeyError if some 
+    This is fault-tolerant and will not raise KeyError if some
     of the required interpolants are missing, but rather just
     leave them untouched
     """
-    
+
     required_interpolants = re.findall('{.*?}', template)
     interpolants = kwargs.copy()
 
@@ -47,7 +65,7 @@ def _resolve_dict(source, interpolants):
 
     interpolants: dict
         Dictionary of strings used to resolve templates
-        
+
     Returns
     -------
     sink : dict
@@ -86,8 +104,8 @@ def _resolve(templates, source, interpolants):
 
     interpolants: dict
         Dictionary of strings used to resolve templates
-    
-    
+
+
     Returns
     -------
     sink : dict
@@ -113,30 +131,24 @@ class NameFactory:
 
 
     """
-    
     config_template = dict(
-        CommonPaths = dict(
-            root='.',
-            scratch_root='.',
-            project='',
-            project_dir='{root}/projects/{project}',
-            project_scratch_dir='{scratch_root}/projects/{project}',
-            catalogs_dir='{root}/catalogs',
-            pipelines_dir='{project_dir}/pipelines',
-        ),
-        PathTemplates = dict(
-            pipeline_path="{pipelines_dir}/{pipeline}_{flavor}.yaml",
-            ceci_output_dir="{project_dir}/data/{selection}_{flavor}",
-            ceci_file_path="{tag}_{stage}.{suffix}",
-        ),
+        CommonPaths = CommonPaths,
+        PathTemplates = PathTemplates,
     )
 
-    def __init__(self, config={}, templates={}, interpolants={}):
-        """ C'tor 
-        
+    def __init__(self, config=None, templates=None, interpolants=None):
+        """ C'tor
+
         """
+        if config is None:
+            config = {}
+        if templates is None:
+            templates = {}
+        if interpolants is None:
+            interpolants = {}
+
         self._config = copy.deepcopy(self.config_template)
-        for key, val in config.items():
+        for key, _val in config.items():
             if key in self._config:
                 self._config[key].update(**config[key])
         self._templates = copy.deepcopy(self._config['PathTemplates'])
@@ -155,7 +167,7 @@ class NameFactory:
 
     def get_common_paths(self):
         return self._config['CommonPaths']
-        
+
     @property
     def interpolants(self):
         """ Return the dict of interpolants that are used to resolve templates """
@@ -170,10 +182,10 @@ class NameFactory:
 
     @interpolants.deleter
     def interpolants(self):
-        """ Reset the dict of interpolants that are used to resolve templates"""        
+        """ Reset the dict of interpolants that are used to resolve templates"""
         self._interpolants = {}
 
-        
+
     def resolve_from_config(self, config):
         """ Resolve all the templates in a dict
 
@@ -211,7 +223,7 @@ class NameFactory:
         -------
         formatted: str
             Resolved version of the template
-        """        
+        """
         if (path_value := config.get(path_key)) is not None:
             formatted = _format_template(path_value, **kwargs, **self.interpolants)
         else:
@@ -240,15 +252,16 @@ class NameFactory:
             section = self._config[section_key]
         except KeyError as msg:
             raise KeyError(
-                f"Config section {section_key} not present: available sections are {list(self._config.keys())}",
-            )
+                f"Config section {section_key} not present:"
+                f"available sections are {list(self._config.keys())}",
+            ) from msg
         try:
             return section[path_key]
         except KeyError as msg:
             raise KeyError(
                 f"Config key {path_key} not present in {section_key}:"
                 f"available paths are {list(section.keys())}",
-            )
+            ) from msg
 
     def resolve_template(self, section_key, path_key, **kwargs):
         """ Return the template for a particular file type
@@ -305,8 +318,8 @@ class NameFactory:
         template = self.get_template('CommonPaths', path_key)
         interp_dict = self.interpolants.copy()
         interp_dict.update(**kwargs)
-        return _format_template(template, **interp_dict)    
-    
+        return _format_template(template, **interp_dict)
+
     @staticmethod
     def build_from_yaml(yaml_file=None, relative=False):
         """ Build a NameFactory from a yaml file
@@ -326,7 +339,7 @@ class NameFactory:
             Newly created factory
         """
         if yaml_file is None:
-            return NameFactory()        
+            return NameFactory()
         with open(yaml_file, 'r') as fin:
             config_dict = yaml.safe_load(fin)
             # Make the file paths relative to the project dir

@@ -1,21 +1,55 @@
 import copy
-import os
-import sys
-import glob
-import subprocess
 from pathlib import Path
-import pprint
-import time
-import functools
 import itertools
 
-import numpy as np
-import pyarrow.parquet as pq
-import pyarrow.dataset as ds
 import yaml
 
-from .pipe_options import RunMode
-from . import name_utils
+from rail.utils import name_utils
+
+
+PZ_ALGORITHMS = dict(
+    train_z=dict(
+        Inform='TrainZInformer',
+        Estimate='TrainZEstimator',
+        Module='rail.estimation.algos.train_z',
+    ),
+    simplenn=dict(
+        Inform='SklNeurNetInformer',
+        Estimate='SklNeurNetEstimator',
+        Module='rail.estimation.algos.sklearn_neurnet',
+    ),
+    knn=dict(
+        Inform='KNearNeighInformer',
+        Estimate='KNearNeighEstimator',
+        Module='rail.estimation.algos.k_nearneigh',
+    ),
+    bpz=dict(
+        Inform='BPZliteInformer',
+        Estimate='BPZliteEstimator',
+        Module='rail.estimation.algos.bpz_lite',
+    ),
+    fzboost=dict(
+        Inform='FlexZBoostInformer',
+        Estimate='FlexZBoostEstimator',
+        Module='rail.estimation.algos.flexzboost',
+    ),
+    gpz=dict(
+        Inform='GPzInformer',
+        Estimate='GPzEstimator',
+        Module='rail.estimation.algos.gpz',
+    ),
+    tpz=dict(
+        Inform='TPZliteInformer',
+        Estimate='TPZliteEstimator',
+        Module='rail.estimation.algos.tpz_lite',
+    ),
+    #lephare=dict(
+    #    Inform='LephareInformer',
+    #    Estimate='LephareEstimator',
+    #    Module='rail.estimation.algos.knn',
+    #),
+)
+
 
 class RailProject:
     config_template = {
@@ -29,8 +63,8 @@ class RailProject:
         "Selections": {},
         "PZAlgorithms": {},
         "NZAlgorithms": {},
+        "SpecSelections": {},
     }
- 
 
     def __init__(self, name, config_dict):
         self.name = name
@@ -43,7 +77,7 @@ class RailProject:
         self.name_factory = name_utils.NameFactory(
             config=self.config,
             templates=config_dict.get('PathTemplates', {}),
-            interpolants=self.config.get("CommonPaths", {})
+            interpolants=self.config.get("CommonPaths", {}),
         )
         self.name_factory.resolve_from_config(
             self.config.get("CommonPaths")
@@ -64,21 +98,21 @@ class RailProject:
     def get_path_templates(self):
         """ Return the dictionary of templates used to construct paths """
         return self.name_factory.get_path_templates()
-    
+
     def get_path(self, path_key, **kwargs):
         """ Resolve and return a path using the kwargs as interopolants """
-        return self.name_factory.resolve_path_template(path_key, **kwargs)    
+        return self.name_factory.resolve_path_template(path_key, **kwargs)
 
     def get_common_paths(self):
-        """ Return the dictionary of common paths """        
+        """ Return the dictionary of common paths """
         return self.name_factory.get_common_paths()
-    
+
     def get_common_path(self, path_key, **kwargs):
-        """ Resolve and return a common path using the kwargs as interopolants """       
-        return self.name_factory.resolve_common_path(path_key, **kwargs)    
+        """ Resolve and return a common path using the kwargs as interopolants """
+        return self.name_factory.resolve_common_path(path_key, **kwargs)
 
     def get_files(self):
-        """ Return the dictionary of specific files """        
+        """ Return the dictionary of specific files """
         return self.config.get("Files")
 
     def get_file(self, name, **kwargs):
@@ -109,29 +143,29 @@ class RailProject:
         return flavor
 
     def get_file_for_flavor(self, flavor, label, **kwargs):
-        """ Resolve the file associated to a particular flavor and label 
+        """ Resolve the file associated to a particular flavor and label
 
         E.g., flavor=baseline and label=train would give the baseline training file
-        """       
+        """
         flavor_dict = self.get_flavor(flavor)
         try:
             file_alias = flavor_dict['FileAliases'][label]
         except KeyError as msg:
-            raise ValueError(f"Label '{label}' not found in flavor '{flavor}'")                           
+            raise ValueError(f"Label '{label}' not found in flavor '{flavor}'") from msg
         return self.get_file(file_alias, flavor=flavor, label=label, **kwargs)
 
     def get_file_metadata_for_flavor(self, flavor, label):
-        """ Resolve the metadata associated to a particular flavor and label 
-        
+        """ Resolve the metadata associated to a particular flavor and label
+
         E.g., flavor=baseline and label=train would give the baseline training metadata
         """
         flavor_dict = self.get_flavor(flavor)
         try:
             file_alias = flavor_dict['FileAliases'][label]
         except KeyError as msg:
-            raise ValueError(f"Label '{label}' not found in flavor '{flavor}'")                           
+            raise ValueError(f"Label '{label}' not found in flavor '{flavor}'") from msg
         return self.get_files()[file_alias]
-    
+
     def get_selections(self):
         return self.config.get("Selections")
 
@@ -162,9 +196,19 @@ class RailProject:
             raise ValueError(f"nz algorithm '{name}' not found in {self}")
         return nzalgorithm
 
+    def get_spec_selections(self):
+        return self.config.get("SpecSelections")
+
+    def get_spec_selection(self, name):
+        spec_selections = self.get_spec_selections()
+        spec_selection = spec_selections.get(name, None)
+        if spec_selection is None:
+            raise ValueError(f"spectroscopic selection '{name}' not found in {self}")
+        return spec_selection
+
     def get_catalogs(self):
         return self.config['Catalogs']
-    
+
     def get_catalog(self, catalog, **kwargs):
         catalog_dict = self.config['Catalogs'].get(catalog, {})
         path = self.name_factory.resolve_path(catalog_dict, "PathTemplate", **kwargs)
@@ -174,7 +218,7 @@ class RailProject:
     def get_pipelines(self):
         return self.config.get("Pipelines")
 
-    def get_pipeline(self, name, **kwargs):
+    def get_pipeline(self, name):
         pipelines = self.get_pipelines()
         return pipelines.get(name, None)
 
@@ -183,8 +227,8 @@ class RailProject:
         if 'all' in flavors:
             return list(flavor_dict.keys())
         return flavors
-    
-    def get_selection_args(self, selections):        
+
+    def get_selection_args(self, selections):
         selection_dict = self.get_selections()
         if 'all' in selections:
             return list(selection_dict.keys())
@@ -192,7 +236,7 @@ class RailProject:
 
     def generate_kwargs_iterable(self, **iteration_dict):
         iteration_vars = list(iteration_dict.keys())
-        iterations = itertools.product( 
+        iterations = itertools.product(
             *[
                 iteration_dict.get(key) for key in iteration_vars
             ]
@@ -209,7 +253,7 @@ class RailProject:
     def generate_ceci_command(
         self,
         pipeline_path,
-        config=None,    
+        config=None,
         inputs=None,
         output_dir='.',
         log_dir='.',
@@ -218,9 +262,9 @@ class RailProject:
 
         if config is None:
             config = pipeline_path.replace('.yaml', '_config.yml')
-            
+
         command_line = [
-            f"ceci",
+            "ceci",
             f"{pipeline_path}",
             f"config={config}",
             f"output_dir={output_dir}",
@@ -230,7 +274,7 @@ class RailProject:
         for key, val in inputs.items():
             command_line.append(f"inputs.{key}={val}")
 
-        
+
         for key, val in kwargs.items():
             command_line.append(f"{key}={val}")
 
