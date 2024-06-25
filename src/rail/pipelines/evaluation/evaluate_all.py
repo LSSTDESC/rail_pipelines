@@ -3,39 +3,20 @@
 
 # Prerquisites, os, and numpy
 import os
-import numpy as np
-
-# Various rail modules
-import rail.stages
-rail.stages.import_and_attach_all()
-from rail.stages import *
 
 from rail.core.stage import RailStage, RailPipeline
-
-import ceci
-
-
-ALL_ALGORITHMS = dict(
-    train_z=dict(Inform='TrainZInformer', Estimate='TrainZEstimator'),
-    simplenn=dict(Inform='SklNeurNetInformer', Estimate='SklNeurNetEstimator'),
-    knn=dict(Inform='KNearNeighInformer', Estimate='KNearNeighEstimator'),
-    bpz=dict(Inform='BPZliteInformer', Estimate='BPZliteEstimator'),
-    fzboost=dict(Inform='FlexZBoostInformer', Estimate='FlexZBoostEstimator'),
-    gpz=dict(Inform='GPzInformer', Estimate='GPzEstimator'),
-    tpz=dict(Inform='TPZliteInformer', Estimate='TPZliteEstimator'),
-    #lephare=dict(Inform='LephareInformer', Estimate='LephareEstimator'),
-)
+from rail.evaluation.single_evaluator import SingleEvaluator
+from rail.utils.project import PZ_ALGORITHMS
 
 
 shared_stage_opts = dict(
-    metrics=['all'], 
+    metrics=['all'],
     exclude_metrics=['rmse', 'ks', 'kld', 'cvm', 'ad', 'rbpe', 'outlier'],
-    hdf5_groupname="", 
-    limits=[0, 3.5], 
+    hdf5_groupname="",
+    limits=[0, 3.5],
     truth_point_estimates=['redshift'],
     point_estimates=['zmode'],
 )
-
 
 
 class EvaluationPipeline(RailPipeline):
@@ -49,21 +30,14 @@ class EvaluationPipeline(RailPipeline):
         DS.__class__.allow_overwrite = True
 
         if algorithms is None:
-            algorithms = ALL_ALGORITHMS
+            algorithms = PZ_ALGORITHMS
 
-        pdfs_dir = namer.resolve_path_template(
-            'ceci_output_dir',
-            selection=selection,
-            flavor=flavor,
-        )
-               
         for key in algorithms.keys():
             the_eval = SingleEvaluator.make_and_connect(
                 name=f'evaluate_{key}',
-                aliases=dict(input=f"input_evaluate_{key}"),                
-                **shared_stage_opts,                
+                aliases=dict(input=f"input_evaluate_{key}"),
+                **shared_stage_opts,
             )
             pdf_path = f'estimate_output_{key}.hdf5'
             self.default_input_dict[f"input_evaluate_{key}"] = os.path.join(pdfs_dir, pdf_path)
             self.add_stage(the_eval)
-

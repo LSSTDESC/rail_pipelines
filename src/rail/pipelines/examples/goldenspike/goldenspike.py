@@ -6,13 +6,18 @@ import os
 import numpy as np
 
 # Various rail modules
-import rail.stages
-rail.stages.import_and_attach_all()
-from rail.stages import *
-
 from rail.core.stage import RailStage, RailPipeline
-
-import ceci
+from rail.creation.engines.flowEngine import FlowCreator
+from rail.creation.degraders.lsst_error_model import LSSTErrorModel
+from rail.creation.degraders.quantityCut import QuantityCut
+from rail.creation.degraders.spectroscopic_degraders import LineConfusion, InvRedshiftIncompleteness
+from rail.tools.table_tools import ColumnMapper, TableConverter
+from rail.estimation.algos.bpz_lite import BPZliteEstimator, BPZliteInformer
+from rail.estimation.algos.flexzboost import FlexZBoostEstimator, FlexZBoostInformer
+from rail.estimation.algos.k_nearneigh import KNearNeighEstimator, KNearNeighInformer
+from rail.estimation.algos.naive_stack import NaiveStackSummarizer
+from rail.estimation.algos.point_est_hist import PointEstHistSummarizer
+from rail.evaluation.dist_to_point_evaluator import DistToPointEvaluator
 
 
 from rail.utils.path_utils import RAILDIR
@@ -24,7 +29,7 @@ class GoldenspikePipeline(RailPipeline):
     default_input_dict = dict(
         model=flow_file,
     )
-  
+
     def __init__(self):
         RailPipeline.__init__(self)
 
@@ -41,7 +46,7 @@ class GoldenspikePipeline(RailPipeline):
         )
 
         self.lsst_error_model_train = LSSTErrorModel.build(
-            connections=dict(input=self.flow_engine_train.io.output),    
+            connections=dict(input=self.flow_engine_train.io.output),
             renameDict=band_dict, seed=29,
         )
 
@@ -132,7 +137,7 @@ class GoldenspikePipeline(RailPipeline):
                 model=self.inform_fzboost.io.model,
             ),
             nondetect_val=np.nan,
-            hdf5_groupname='',            
+            hdf5_groupname='',
         )
 
         eval_dict = dict(bpz=self.estimate_bpz, fzboost=self.estimate_fzboost, knn=self.estimate_knn)

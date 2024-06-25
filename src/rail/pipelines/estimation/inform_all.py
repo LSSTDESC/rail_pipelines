@@ -1,34 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# Prerquisites, os, and numpy
-import os
-import numpy as np
-
-# Various rail modules
-import rail.stages
-rail.stages.import_and_attach_all()
-from rail.stages import *
-
-from rail.core.stage import RailStage, RailPipeline
-
 import ceci
 
-from rail.utils.path_utils import RAILDIR
+from rail.core.stage import RailStage, RailPipeline
+from rail.utils.project import PZ_ALGORITHMS
+
 
 input_file = 'rubin_dm_dc2_example.pq'
-
-
-ALL_ALGORITHMS = dict(
-    train_z=dict(Inform='TrainZInformer'),
-    simplenn=dict(Inform='SklNeurNetInformer'),
-    knn=dict(Inform='KNearNeighInformer'),
-    bpz=dict(Inform='BPZliteInformer'),
-    fzboost=dict(Inform='FlexZBoostInformer'),
-    gpz=dict(Inform='GPzInformer'),
-    tpz=dict(Inform='TPZliteInformer'),
-    #lephare=dict(Inform='LephareInformer'),
-)
 
 
 class InformPipeline(RailPipeline):
@@ -42,10 +21,10 @@ class InformPipeline(RailPipeline):
         DS.__class__.allow_overwrite = True
 
         if algorithms is None:
-            algorithms = ALL_ALGORITHMS
+            algorithms = PZ_ALGORITHMS
 
         for key, val in algorithms.items():
-            the_class = ceci.PipelineStage.get_stage(val['Inform'])
+            the_class = ceci.PipelineStage.get_stage(val['Inform'], val['Module'])
             the_informer = the_class.make_and_connect(
                 name=f'inform_{key}',
                 hdf5_groupname='',

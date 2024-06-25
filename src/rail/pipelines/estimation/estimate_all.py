@@ -3,38 +3,21 @@
 
 # Prerquisites, os, and numpy
 import os
-import numpy as np
-
-# Various rail modules
-import rail.stages
-rail.stages.import_and_attach_all()
-from rail.stages import *
-
-from rail.core.stage import RailStage, RailPipeline
-
 import ceci
 
+
+# Various rail modules
+from rail.core.stage import RailStage, RailPipeline
+from rail.utils.project import PZ_ALGORITHMS
 
 
 input_file = 'rubin_dm_dc2_example.pq'
 
 
-ALL_ALGORITHMS = dict(
-    train_z=dict(Estimate='TrainZEstimator'),
-    simplenn=dict(Estimate='SklNeurNetEstimator'),
-    knn=dict(Estimate='KNearNeighEstimator'),
-    bpz=dict(Estimate='BPZliteEstimator'),
-    fzboost=dict(Estimate='FlexZBoostEstimator'),
-    gpz=dict(Estimate='GPzEstimator'),
-    tpz=dict(Estimate='TPZliteEstimator'),
-    #lephare=dict(Estimate='LephareEstimator'),
-)
-    
-
 class EstimatePipeline(RailPipeline):
 
     default_input_dict={'input':'dummy.in'}
-     
+
     def __init__(self, algorithms=None, models_dir='.'):
 
         RailPipeline.__init__(self)
@@ -43,8 +26,8 @@ class EstimatePipeline(RailPipeline):
         DS.__class__.allow_overwrite = True
 
         if algorithms is None:
-            algorithms = ALL_ALGORITHMS.copy()
-        
+            algorithms = PZ_ALGORITHMS.copy()
+
         for key, val in algorithms.items():
             the_class = ceci.PipelineStage.get_stage(val['Estimate'])
             the_estimator = the_class.make_and_connect(
@@ -55,5 +38,3 @@ class EstimatePipeline(RailPipeline):
             model_path = f'inform_model_{key}.pkl'
             self.default_input_dict[f"model_{key}"] = os.path.join(models_dir, model_path)
             self.add_stage(the_estimator)
-
-            
