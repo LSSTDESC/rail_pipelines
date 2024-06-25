@@ -1,6 +1,4 @@
 import enum
-from functools import partial
-from typing import Any, Type, TypeVar
 
 import click
 
@@ -14,7 +12,7 @@ from rail.cli.options import (
 __all__ = [
     "RunMode",
     "config_path",
-    "flavor",    
+    "flavor",
     "input_dir",
     "input_file",
     "label",

@@ -1,12 +1,7 @@
-import copy
 import os
-import sys
-import glob
 import subprocess
-from pathlib import Path
 import pprint
 import time
-import functools
 import itertools
 
 import numpy as np
@@ -16,8 +11,8 @@ import yaml
 
 from rail.utils import catalog_utils
 from rail.core.stage import RailPipeline
-from .pipe_options import RunMode
-from .project import RailProject
+from rail.utils.project import RailProject
+from rail.cli.pipe_options import RunMode
 
 
 def handle_command(run_mode, command_line):
@@ -31,7 +26,7 @@ def handle_command(run_mode, command_line):
     elif run_mode == RunMode.bash:
         # return os.system(command_line)
         finished = subprocess.run(command_line)
-    elif run_mode == RunMode.slurm:        
+    elif run_mode == RunMode.slurm:
         raise RuntimeError("handle_command should not be called with run_mode == RunMode.slurm")
 
     returncode = finished.returncode
@@ -43,7 +38,7 @@ def handle_command(run_mode, command_line):
 
 
 def handle_commands(run_mode, command_lines, script_path=None):
-    
+
     if run_mode in [RunMode.dry_run, RunMode.bash]:
         for command_ in command_lines:
             retcode = handle_command(run_mode, command_)
@@ -83,7 +78,7 @@ def inspect(config_file):
     project = RailProject.load_config(config_file)
     printable_config = pprint.pformat(project.config, compact=True)
     print(f"RAIL Project: {project}")
-    print(f">>>>>>>>")
+    print(">>>>>>>>")
     print(printable_config)
     print("<<<<<<<<")
     return 0
@@ -100,8 +95,8 @@ def truth_to_observed_pipeline(
     pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, flavor=flavor)
 
     input_catalog_name = pipeline_info['InputCatalogTag']
-    input_catalog = project.get_catalogs().get(input_catalog_name)        
-        
+    input_catalog = project.get_catalogs().get(input_catalog_name)
+
     # Loop through all possible combinations of the iteration variables that are
     # relevant to this pipeline
     if (iteration_vars := input_catalog.get("IterationVars")) is not None:
@@ -118,10 +113,15 @@ def truth_to_observed_pipeline(
             }
 
             source_catalog = project.get_catalog('reduced', selection=selection, **iteration_kwargs)
-            sink_catalog = project.get_catalog('degraded', selection=selection, flavor=flavor, **iteration_kwargs)
+            sink_catalog = project.get_catalog(
+                'degraded',
+                selection=selection,
+                flavor=flavor,
+                **iteration_kwargs,
+            )
             sink_dir = os.path.dirname(sink_catalog)
             script_path = os.path.join(sink_dir, f"submit_{pipeline_name}_{selection}_{flavor}.sh")
-            
+
             ceci_command = project.generate_ceci_command(
                 pipeline_path=pipeline_path,
                 config=pipeline_path.replace('.yaml', '_config.yml'),
@@ -129,7 +129,7 @@ def truth_to_observed_pipeline(
                 output_dir=sink_dir,
                 log_dir=sink_dir,
             )
-            
+
             if not os.path.isfile(source_catalog):
                 raise ValueError(f"Input file {source_catalog} not found")
             try:
@@ -138,7 +138,101 @@ def truth_to_observed_pipeline(
                     [
                         ["mkdir", "-p", f"{sink_dir}"],
                         ceci_command,
-                        ["tables-io", "convert", "--input", f"{sink_dir}/output_dereddener_errors.pq", "--output", f"{sink_dir}/output.hdf5"]
+                        [
+                            "tables-io",
+                            "convert",
+                            "--input",
+                            f"{sink_dir}/output_dereddener_errors.pq",
+                            "--output",
+                            f"{sink_dir}/output.hdf5",
+                        ]
+                    ],
+                    script_path,
+                )
+            except Exception as msg:
+                print(msg)
+                return 1
+        return 0
+
+    # FIXME need to get catalogs even if iteration not specified; this return fallback isn't ideal
+    return 1
+
+
+def spectroscopic_selection_pipeline(
+    project,
+    selection,
+    flavor,
+    run_mode=RunMode.bash,
+):
+    pipeline_name = "spec_selection"
+    pipeline_info = project.get_pipeline(pipeline_name)
+    pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, flavor=flavor)
+
+    input_catalog_name = pipeline_info['InputCatalogTag']
+    input_catalog = project.get_catalogs().get(input_catalog_name)
+
+    spec_selections = project.get_spec_selections()
+    
+    # Loop through all possible combinations of the iteration variables that are
+    # relevant to this pipeline
+    if (iteration_vars := input_catalog.get("IterationVars")) is not None:
+        iterations = itertools.product(
+            *[
+                project.config.get("IterationVars").get(iteration_var)
+                for iteration_var in iteration_vars
+            ]
+        )
+        for iteration_args in iterations:
+            iteration_kwargs = {
+                iteration_vars[i]: iteration_args[i]
+                for i in range(len(iteration_vars))
+            }
+
+            source_catalog = project.get_catalog(
+                input_catalog_name,
+                selection=selection,
+                flavor=flavor,
+                basename="output_dereddener_errors.pq",
+                **iteration_kwargs,
+            )
+            sink_catalog = project.get_catalog(
+                'degraded',
+                selection=selection,
+                flavor=flavor,
+                **iteration_kwargs,
+            )
+            sink_dir = os.path.dirname(sink_catalog)
+            script_path = os.path.join(sink_dir, f"submit_{pipeline_name}_{selection}_{flavor}.sh")
+
+            ceci_command = project.generate_ceci_command(
+                pipeline_path=pipeline_path,
+                config=pipeline_path.replace('.yaml', '_config.yml'),
+                inputs=dict(input=source_catalog),
+                output_dir=sink_dir,
+                log_dir=sink_dir,
+            )
+
+            convert_commands = []
+            for spec_selection_ in spec_selections.keys():
+                convert_command = [
+                    "tables-io",
+                    "convert",
+                    "--input",
+                    f"{sink_dir}/output_select_{spec_selection_}.pq",
+                    "--output",
+                    f"{sink_dir}/output_select_{spec_selection_}.hdf5",
+                ]
+                convert_commands.append(convert_command)
+                
+            if not os.path.isfile(source_catalog):
+                raise ValueError(f"Input file {source_catalog} not found")
+            try:
+                handle_commands(
+                    run_mode,
+                    [
+                        ["mkdir", "-p", f"{sink_dir}"],
+                        ceci_command,
+                        *convert_commands,
                     ],
                     script_path,
                 )
@@ -178,7 +272,7 @@ def inform_pipeline(
         output_dir=sink_dir,
         log_dir=f"{sink_dir}/logs",
     )
- 
+
     try:
         handle_commands(run_mode, [command_line], script_path)
     except Exception as msg:
@@ -200,7 +294,7 @@ def estimate_single(
     pipeline_config = pipeline_path.replace('.yaml', '_config.yml')
     sink_dir = project.get_path('ceci_output_dir', selection=selection, flavor=flavor)
     script_path = os.path.join(sink_dir, f"submit_{pipeline_name}.sh")
-    
+
     input_files = {}
     input_file_tags = pipeline_info['InputFileTags']
     for key, val in input_file_tags.items():
@@ -209,8 +303,8 @@ def estimate_single(
 
     pz_algorithms = project.get_pzalgorithms()
     for pz_algo_ in pz_algorithms.keys():
-        input_files[f"model_{pz_algo_}"] = os.path.join(sink_dir, f'inform_model_{pz_algo_}.pkl')                                                        
-                                                        
+        input_files[f"model_{pz_algo_}"] = os.path.join(sink_dir, f'inform_model_{pz_algo_}.pkl')
+
     command_line = project.generate_ceci_command(
         pipeline_path=pipeline_path,
         config=pipeline_config,
@@ -218,7 +312,7 @@ def estimate_single(
         output_dir=sink_dir,
         log_dir=f"{sink_dir}/logs",
     )
-  
+
     try:
         handle_commands(run_mode, [command_line], script_path)
     except Exception as msg:
@@ -249,9 +343,9 @@ def evaluate_single(
     pdfs_dir = sink_dir
     pz_algorithms = project.get_pzalgorithms()
     for pz_algo_ in pz_algorithms.keys():
-        input_files[f"input_evaluate_{pz_algo_}"] = os.path.join(pdfs_dir, f'estimate_output_{key}.hdf5')
-        
-    
+        input_files[f"input_evaluate_{pz_algo_}"] = os.path.join(pdfs_dir, f'estimate_output_{pz_algo_}.hdf5')
+
+
     command_line = project.generate_ceci_command(
         pipeline_path=pipeline_path,
         config=pipeline_config,
@@ -278,14 +372,14 @@ def pz_single(
     pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, flavor=flavor)
     pipeline_config = pipeline_path.replace('.yaml', '_config.yml')
     sink_dir = project.get_path('ceci_output_dir', selection=selection, flavor=flavor)
-    script_path = os.path.join(sink_dir, f"submit_{pipeline_name}.sh")    
-    
+    script_path = os.path.join(sink_dir, f"submit_{pipeline_name}.sh")
+
     input_files = {}
     input_file_tags = pipeline_info['InputFileTags']
     for key, val in input_file_tags.items():
-        input_file_flavor = val.get('flavor', 'baseline')
+        input_file_flavor = val.get('flavor', flavor)
         input_files[key] = project.get_file_for_flavor(input_file_flavor, val['tag'], selection=selection)
-        
+
     command_line = project.generate_ceci_command(
         pipeline_path=pipeline_path,
         config=pipeline_config,
@@ -314,6 +408,7 @@ def subsample_data(
     hdf5_output = project.get_file_for_flavor(flavor, label, selection=selection)
     output = hdf5_output.replace('.hdf5', '.parquet')
     output_metadata = project.get_file_metadata_for_flavor(flavor, label)
+    basename = output_metadata['SourceFileBasename']
     output_dir = os.path.dirname(output)
     size = output_metadata.get("NumObjects")
     seed = output_metadata.get("Seed")
@@ -333,8 +428,14 @@ def subsample_data(
             for i in range(len(iteration_vars))
         }
 
-        source_catalog = project.get_catalog(source_tag, selection=selection, flavor=flavor, **iteration_kwargs)    
-        sources.append(source_catalog.replace('output.hdf5','output_dereddener_errors.pq'))
+        source_catalog = project.get_catalog(
+            source_tag,
+            selection=selection,
+            flavor=flavor,
+            basename=basename,
+            **iteration_kwargs,
+        )
+        sources.append(source_catalog)
 
     if run_mode == RunMode.slurm:
         raise NotImplementedError("subsample_data not set up to run under slurm")
@@ -344,12 +445,14 @@ def subsample_data(
     print("num rows", num_rows)
     rng = np.random.default_rng(seed)
     print("sampling", size)
+
+    size = min(size, num_rows)    
     indices = rng.choice(num_rows, size=size, replace=False)
     subset = dataset.take(indices)
     print("writing", output)
 
-    if run_mode == RunMode.bash:    
-        os.makedirs(output_dir, exist_ok=True)    
+    if run_mode == RunMode.bash:
+        os.makedirs(output_dir, exist_ok=True)
         pq.write_table(
             subset,
             output,
@@ -367,7 +470,7 @@ def build_pipelines(project, flavor='baseline'):
     pipelines_to_build = flavor_dict['Pipelines']
     pipeline_overrides = flavor_dict.get('PipelineOverrides', {})
     do_all = 'all' in pipelines_to_build
-    
+
     for pipeline_name, pipeline_info in project.get_pipelines().items():
         if not (do_all or pipeline_name in pipelines_to_build):
             print(f"Skipping pipeline {pipeline_name} from flavor {flavor}")
@@ -387,27 +490,42 @@ def build_pipelines(project, flavor='baseline'):
         overrides = pipeline_overrides.get('default', {})
         overrides.update(**pipeline_overrides.get(pipeline_name, {}))
 
+        pipeline_kwargs = pipeline_info.get('kwargs', {})
+        for key, val in pipeline_kwargs.items():
+            if val == 'SpecSelections':
+                pipeline_kwargs[key] = project.get_spec_selections()
+            elif val == 'PZAlgorithms':
+                pipeline_kwargs[key] = project.get_pzalgorithms()
+        
         if overrides:
             pipe_ctor_kwargs = overrides.pop('kwargs', {})
+            pipeline_kwargs.update(**pipe_ctor_kwargs)
             stages_config = os.path.join(pipe_out_dir, f"{pipeline_name}_{flavor}_overrides.yml")
             with open(stages_config, 'w') as fout:
                 yaml.dump(overrides, fout)
         else:
             stages_config = None
-            pipe_ctor_kwargs = {}
-            
+
         pipeline_class = pipeline_info['PipelineClass']
         catalog_tag = pipeline_info['CatalogTag']
 
         if catalog_tag:
             catalog_utils.apply_defaults(catalog_tag)
-        
+
         tokens = pipeline_class.split('.')
         module = '.'.join(tokens[:-1])
         class_name = tokens[-1]
         log_dir = f"{output_dir}/logs/{pipeline_name}"
-        
-        __import__(module)        
-        RailPipeline.build_and_write(class_name, output_yaml, None, stages_config, output_dir, log_dir, **pipe_ctor_kwargs)
+
+        __import__(module)
+        RailPipeline.build_and_write(
+            class_name,
+            output_yaml,
+            None,
+            stages_config,
+            output_dir,
+            log_dir,
+            **pipeline_kwargs,
+        )
 
     return 0

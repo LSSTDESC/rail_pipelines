@@ -1,16 +1,13 @@
 import math
-from pathlib import Path
 import itertools
 import os
 
-import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.dataset as ds
 import pyarrow.parquet as pq
 from pyarrow import acero
 
-from rail.cli.project import RailProject
-from .pipe_options import RunMode
+from rail.cli.pipe_options import RunMode
 
 
 COLUMNS = [
@@ -104,7 +101,7 @@ def reduce_roman_rubin_data(
         selection_dict = project.get_selection(selection)
     else:
         selection_dict = {}
-        
+
 
     # FIXME
     iteration_vars = list(project.config.get("IterationVars").keys())
@@ -191,12 +188,17 @@ def reduce_roman_rubin_data(
             plan = acero.Declaration.from_sequence(seq)
             print(plan)
 
+            if run_mode == RunMode.dry_run:
+                continue
+            if run_mode == RunMode.slurm:
+                raise NotImplementedError("run_mode == RunMode.slurm not implemented for reduce_roman_rubin")
+
             # batches = plan.to_reader(use_threads=True)
             table = plan.to_table(use_threads=True)
             print(f"writing dataset to {sink_catalog}")
             os.makedirs(sink_dir, exist_ok=True)
             pq.write_table(table, sink_catalog)
 
-        print(f"writing completed")
+        print("writing completed")
 
     return 0
