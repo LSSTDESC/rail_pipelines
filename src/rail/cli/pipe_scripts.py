@@ -499,6 +499,12 @@ def build_pipelines(project, flavor='baseline'):
         
         if overrides:
             pipe_ctor_kwargs = overrides.pop('kwargs', {})
+            pz_algorithms = pipe_ctor_kwargs.pop('PZAlgorithms', None)
+            if pz_algorithms:
+                orig_pz_algorithms = project.get_pzalgorithms().copy()
+                pipe_ctor_kwargs['algorithms'] = {
+                    pz_algo_: orig_pz_algorithms[pz_algo_] for pz_algo_ in pz_algorithms
+                }
             pipeline_kwargs.update(**pipe_ctor_kwargs)
             stages_config = os.path.join(pipe_out_dir, f"{pipeline_name}_{flavor}_overrides.yml")
             with open(stages_config, 'w') as fout:
