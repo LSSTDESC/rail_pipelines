@@ -54,6 +54,7 @@ class PzPipeline(RailPipeline):
                 connections=dict(
                     model=the_informer.io.model,
                 ),
+                calculated_point_estimates=['zmode'],
                 hdf5_groupname='',
             )
             self.add_stage(the_estimator)
