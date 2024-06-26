@@ -29,7 +29,7 @@ class EstimatePipeline(RailPipeline):
             algorithms = PZ_ALGORITHMS.copy()
 
         for key, val in algorithms.items():
-            the_class = ceci.PipelineStage.get_stage(val['Estimate'])
+            the_class = ceci.PipelineStage.get_stage(val['Estimate'], val['Module'])
             the_estimator = the_class.make_and_connect(
                 name=f'estimate_{key}',
                 aliases=dict(model=f"model_{key}"),
