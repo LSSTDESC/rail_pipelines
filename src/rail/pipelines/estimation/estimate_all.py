@@ -33,6 +33,7 @@ class EstimatePipeline(RailPipeline):
             the_estimator = the_class.make_and_connect(
                 name=f'estimate_{key}',
                 aliases=dict(model=f"model_{key}"),
+                calculated_point_estimates=['zmode'],
                 hdf5_groupname='',
             )
             model_path = f'inform_model_{key}.pkl'
