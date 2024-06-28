@@ -417,7 +417,7 @@ def tomography_single(
     pdfs_dir = sink_dir
     pz_algorithms = project.get_pzalgorithms()
     for pz_algo_ in pz_algorithms.keys():
-        input_files[f"input_{pz_algo_}"] = os.path.join(pdfs_dir, f'estimate_output_{pz_algo_}.hdf5')
+        input_files[f"input_{pz_algo_}"] = os.path.join(pdfs_dir, f'output_estimate_{pz_algo_}.hdf5')
 
     command_line = project.generate_ceci_command(
         pipeline_path=pipeline_path,
