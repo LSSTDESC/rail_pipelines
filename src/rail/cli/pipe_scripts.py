@@ -395,6 +395,45 @@ def pz_single(
     return 0
 
 
+def tomography_single(
+    project,
+    selection="gold",
+    flavor="baseline",
+    run_mode=RunMode.bash,
+):
+    pipeline_name = "tomography"
+    pipeline_info = project.get_pipeline(pipeline_name)
+    pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, flavor=flavor)
+    pipeline_config = pipeline_path.replace('.yaml', '_config.yml')
+    sink_dir = project.get_path('ceci_output_dir', selection=selection, flavor=flavor)
+    script_path = os.path.join(sink_dir, f"submit_{pipeline_name}.sh")
+
+    input_files = {}
+    input_file_tags = pipeline_info['InputFileTags']
+    for key, val in input_file_tags.items():
+        input_file_flavor = val.get('flavor', flavor)
+        input_files[key] = project.get_file_for_flavor(input_file_flavor, val['tag'], selection=selection)
+
+    pdfs_dir = sink_dir
+    pz_algorithms = project.get_pzalgorithms()
+    for pz_algo_ in pz_algorithms.keys():
+        input_files[f"input_{pz_algo_}"] = os.path.join(pdfs_dir, f'estimate_output_{pz_algo_}.hdf5')
+
+    command_line = project.generate_ceci_command(
+        pipeline_path=pipeline_path,
+        config=pipeline_config,
+        inputs=input_files,
+        output_dir=sink_dir,
+        log_dir=f"{sink_dir}/logs",
+    )
+    try:
+        handle_commands(run_mode, [command_line], script_path)
+    except Exception as msg:
+        print(msg)
+        return 1
+    return 0
+
+
 
 def subsample_data(
     project,
@@ -496,7 +535,13 @@ def build_pipelines(project, flavor='baseline'):
                 pipeline_kwargs[key] = project.get_spec_selections()
             elif val == 'PZAlgorithms':
                 pipeline_kwargs[key] = project.get_pzalgorithms()
-        
+            elif val == 'NZAlgorithms':
+                pipeline_kwargs[key] = project.get_nzalgorithms()
+            elif val == 'Classifiers':
+                pipeline_kwargs[key] = project.get_classifiers()
+            elif val == 'Summarizers':
+                pipeline_kwargs[key] = project.get_summarizers()
+                
         if overrides:
             pipe_ctor_kwargs = overrides.pop('kwargs', {})
             pz_algorithms = pipe_ctor_kwargs.pop('PZAlgorithms', None)
@@ -504,7 +549,7 @@ def build_pipelines(project, flavor='baseline'):
                 orig_pz_algorithms = project.get_pzalgorithms().copy()
                 pipe_ctor_kwargs['algorithms'] = {
                     pz_algo_: orig_pz_algorithms[pz_algo_] for pz_algo_ in pz_algorithms
-                }
+                }            
             pipeline_kwargs.update(**pipe_ctor_kwargs)
             stages_config = os.path.join(pipe_out_dir, f"{pipeline_name}_{flavor}_overrides.yml")
             with open(stages_config, 'w') as fout:

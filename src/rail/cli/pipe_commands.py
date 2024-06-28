@@ -168,3 +168,20 @@ def pz_single(config_file, **kwargs):
     for kw in iter_kwargs:
         ok |= pipe_scripts.pz_single(project, **kw, **kwargs)
     return ok
+
+
+@pipe_cli.command(name="tomography")
+@pipe_options.config_file()
+@pipe_options.flavor()
+@pipe_options.selection()
+@pipe_options.run_mode()
+def tomography_single(config_file, **kwargs):
+    """Run the pz pipeline"""
+    project = RailProject.load_config(config_file)
+    flavors = project.get_flavor_args(kwargs.pop('flavor'))
+    selections = project.get_selection_args(kwargs.pop('selection'))
+    iter_kwargs = project.generate_kwargs_iterable(flavor=flavors, selection=selections)
+    ok = 0
+    for kw in iter_kwargs:
+        ok |= pipe_scripts.tomography_single(project, **kw, **kwargs)
+    return ok

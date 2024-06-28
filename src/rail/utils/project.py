@@ -6,49 +6,7 @@ import yaml
 
 from rail.utils import name_utils
 
-
-PZ_ALGORITHMS = dict(
-    train_z=dict(
-        Inform='TrainZInformer',
-        Estimate='TrainZEstimator',
-        Module='rail.estimation.algos.train_z',
-    ),
-    simplenn=dict(
-        Inform='SklNeurNetInformer',
-        Estimate='SklNeurNetEstimator',
-        Module='rail.estimation.algos.sklearn_neurnet',
-    ),
-    knn=dict(
-        Inform='KNearNeighInformer',
-        Estimate='KNearNeighEstimator',
-        Module='rail.estimation.algos.k_nearneigh',
-    ),
-    bpz=dict(
-        Inform='BPZliteInformer',
-        Estimate='BPZliteEstimator',
-        Module='rail.estimation.algos.bpz_lite',
-    ),
-    fzboost=dict(
-        Inform='FlexZBoostInformer',
-        Estimate='FlexZBoostEstimator',
-        Module='rail.estimation.algos.flexzboost',
-    ),
-    gpz=dict(
-        Inform='GPzInformer',
-        Estimate='GPzEstimator',
-        Module='rail.estimation.algos.gpz',
-    ),
-    tpz=dict(
-        Inform='TPZliteInformer',
-        Estimate='TPZliteEstimator',
-        Module='rail.estimation.algos.tpz_lite',
-    ),
-    #lephare=dict(
-    #    Inform='LephareInformer',
-    #    Estimate='LephareEstimator',
-    #    Module='rail.estimation.algos.knn',
-    #),
-)
+from .algo_library import PZ_ALGORITHMS, CLASSIFIERS, SUMMARIZERS, SPEC_SELECTIONS
 
 
 class RailProject:
@@ -64,6 +22,8 @@ class RailProject:
         "PZAlgorithms": {},
         "NZAlgorithms": {},
         "SpecSelections": {},
+        "Classifiers": {},
+        "Summarizers": {},
     }
 
     def __init__(self, name, config_dict):
@@ -88,6 +48,7 @@ class RailProject:
 
     @staticmethod
     def load_config(config_file):
+        """ Create and return a RailProject from a yaml config file"""
         project_name = Path(config_file).stem
         with open(config_file, "r") as fp:
             config_dict = yaml.safe_load(fp)
@@ -167,9 +128,11 @@ class RailProject:
         return self.get_files()[file_alias]
 
     def get_selections(self):
+        """ Get the dictionary describing all the selections"""
         return self.config.get("Selections")
 
     def get_selection(self, name):
+        """ Get a particular selection by name"""
         selections = self.get_selections()
         selection = selections.get(name, None)
         if selection is None:
@@ -177,9 +140,11 @@ class RailProject:
         return selection
 
     def get_pzalgorithms(self):
+        """ Get the dictionary describing all the PZ estimation algorithms"""
         return self.config.get("PZAlgorithms")
 
     def get_pzalgorithm(self, name):
+        """ Get the information about a particular PZ estimation algorithm"""
         pzalgorithms = self.get_pzalgorithms()
         pzalgorithm = pzalgorithms.get(name, None)
         if pzalgorithm is None:
@@ -187,9 +152,11 @@ class RailProject:
         return pzalgorithm
 
     def get_nzalgorithms(self):
+        """ Get the dictionary describing all the PZ estimation algorithms"""
         return self.config.get("NZAlgorithms")
 
     def get_nzalgorithm(self, name):
+        """ Get the information about a particular NZ estimation algorithm"""
         nzalgorithms = self.get_nzalgorithms()
         nzalgorithm = nzalgorithms.get(name, None)
         if nzalgorithm is None:
@@ -197,38 +164,81 @@ class RailProject:
         return nzalgorithm
 
     def get_spec_selections(self):
+        """ Get the dictionary describing all the spectroscopic selection algorithms"""
         return self.config.get("SpecSelections")
 
     def get_spec_selection(self, name):
+        """ Get the information about a particular spectroscopic selection algorithm"""
         spec_selections = self.get_spec_selections()
         spec_selection = spec_selections.get(name, None)
         if spec_selection is None:
             raise ValueError(f"spectroscopic selection '{name}' not found in {self}")
         return spec_selection
+    
+    def get_classifiers(self):
+        """ Get the dictionary describing all the tomographic bin classification"""
+        return self.config.get("Classifiers")
+
+    def get_classifier(self, name):
+        """ Get the information about a particular tomographic bin classification"""
+        classifiers = self.get_classifier()
+        classifier = classifiers.get(name, None)
+        if classifier is None:
+            raise ValueError(f"tomographic bin classifier '{name}' not found in {self}")
+        return classifier
+
+    def get_summarizers(self):
+        """ Get the dictionary describing all the NZ summarization algorithms"""
+        return self.config.get("Summarizers")
+
+    def get_summarizer(self, name):
+        """ Get the information about a particular NZ summarization algorithms"""
+        summarizers = self.get_summarizer()
+        summarizer = summarizers.get(name, None)
+        if summarizer is None:
+            raise ValueError(f"NZ summarizer '{name}' not found in {self}")
+        return summarizer
 
     def get_catalogs(self):
+        """ Get the dictionary describing all the types of data catalogs"""
         return self.config['Catalogs']
 
     def get_catalog(self, catalog, **kwargs):
+        """ Resolve the path for a particular catalog file"""
         catalog_dict = self.config['Catalogs'].get(catalog, {})
         path = self.name_factory.resolve_path(catalog_dict, "PathTemplate", **kwargs)
-
         return path
 
     def get_pipelines(self):
+        """ Get the dictionary describing all the types of ceci pipelines"""
         return self.config.get("Pipelines")
 
     def get_pipeline(self, name):
+        """ Get the information about a particular ceci pipeline"""        
         pipelines = self.get_pipelines()
         return pipelines.get(name, None)
 
     def get_flavor_args(self, flavors):
+        """ Get the 'flavors' to iterate a particular command over
+
+        Notes
+        -----
+        If the flavor 'all' is included in the list of flavors, this
+        will replace the list with all the flavors defined in this project        
+        """
         flavor_dict = self.get_flavors()
         if 'all' in flavors:
             return list(flavor_dict.keys())
         return flavors
 
     def get_selection_args(self, selections):
+        """ Get the 'selections' to iterate a particular command over
+
+        Notes
+        -----
+        If the selection 'all' is included in the list of selections, this
+        will replace the list with all the selections defined in this project        
+        """        
         selection_dict = self.get_selections()
         if 'all' in selections:
             return list(selection_dict.keys())

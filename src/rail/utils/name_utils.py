@@ -27,7 +27,6 @@ PathTemplates = dict(
 )
 
 
-
 def _get_required_interpolants(template):
     """ Get the list of interpolants required to format a template string
 
@@ -127,8 +126,7 @@ def _resolve(templates, source, interpolants):
 
 
 class NameFactory:
-    """ Class define standard paths for various data products
-
+    """ Class defining standard paths for various data products
 
     """
     config_template = dict(
@@ -319,37 +317,3 @@ class NameFactory:
         interp_dict = self.interpolants.copy()
         interp_dict.update(**kwargs)
         return _format_template(template, **interp_dict)
-
-    @staticmethod
-    def build_from_yaml(yaml_file=None, relative=False):
-        """ Build a NameFactory from a yaml file
-
-        Parameters
-        ----------
-        yaml_file: str | None
-            Path to the yaml file in question.  If `None` will use default configuration
-
-        relative: bool
-            If `True` will define relative paths w.r.t. {root}/{project}
-            This is useful if you want to set the ceci output_dir to {root}/{project}
-
-        Returns
-        -------
-        name_factory: NameFactory
-            Newly created factory
-        """
-        if yaml_file is None:
-            return NameFactory()
-        with open(yaml_file, 'r') as fin:
-            config_dict = yaml.safe_load(fin)
-            # Make the file paths relative to the project dir
-            if relative:
-                config_dict['CommonPaths'].update(
-                    root='.',
-                    project='',
-                )
-        return NameFactory(
-            config_dict,
-            config_dict.get('PathTemplates', {}),
-            config_dict.get("CommonPaths", {}),
-        )
