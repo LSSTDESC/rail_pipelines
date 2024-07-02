@@ -134,9 +134,10 @@ class RailProject:
     def get_selection(self, name):
         """ Get a particular selection by name"""
         selections = self.get_selections()
-        selection = selections.get(name, None)
-        if selection is None:
-            raise ValueError(f"selection '{name}' not found in {self}")
+        try:
+            selection = selections[name]
+        except KeyError as msg:
+            raise ValueError(f"selection '{name}' not found in {self}") from msg
         return selection
 
     def get_pzalgorithms(self):

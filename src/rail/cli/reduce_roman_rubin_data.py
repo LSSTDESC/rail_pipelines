@@ -98,9 +98,9 @@ def reduce_roman_rubin_data(
     predicates = []
 
     if selection is not None:
-        selection_dict = project.get_selection(selection)
+        selection_filters = project.get_selection(selection)
     else:
-        selection_dict = {}
+        selection_filters = None
 
 
     # FIXME
@@ -121,8 +121,8 @@ def reduce_roman_rubin_data(
             source_catalog = project.get_catalog('truth', **iteration_kwargs)
             sink_catalog = project.get_catalog('reduced', selection=selection, **iteration_kwargs)
             sink_dir = os.path.dirname(sink_catalog)
-            if selection_dict:
-                predicate = pc.field("LSST_obs_i") < selection_dict["maglim_i"][1]
+            if selection_filters is not None:
+                predicate = pq.filters_to_expression(selection_filters)
             else:
                 predicate = None
 
@@ -155,12 +155,17 @@ def reduce_roman_rubin_data(
                 ),
             )
 
-            filter_node = acero.Declaration(
-                "filter",
-                acero.FilterNodeOptions(
-                    predicate,
-                ),
-            )
+            seq = [scan_node]
+
+            if predicate is not None:
+                filter_node = acero.Declaration(
+                    "filter",
+                    acero.FilterNodeOptions(
+                        predicate,
+                    ),
+                )
+
+                seq.append(filter_node)
 
             column_projection = {
                 k: pc.field(k)
@@ -180,11 +185,8 @@ def reduce_roman_rubin_data(
                 )
                 project_nodes.append(project_node)
 
-            seq = [
-                scan_node,
-                filter_node,
-                *project_nodes,
-            ]
+                seq.append(project_node)
+
             plan = acero.Declaration.from_sequence(seq)
             print(plan)
 
