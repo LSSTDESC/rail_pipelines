@@ -24,7 +24,7 @@ class TomographyPipeline(RailPipeline):
         DS.__class__.allow_overwrite = True
 
         if algorithms is None:
-            algortihms = PZ_ALGORITHMS
+            algorithms = PZ_ALGORITHMS
         
         if classifiers is None:
             classifiers = CLASSIFIERS
