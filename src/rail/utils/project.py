@@ -81,7 +81,7 @@ class RailProject:
         files = self.get_files()
         file_dict = files.get(name, None)
         if file_dict is None:
-            raise ValueError(f"file '{name}' not found in {self}")
+            raise KeyError(f"file '{name}' not found in {self}")
         path = self.name_factory.resolve_path(file_dict, "PathTemplate", **kwargs)
         return path
 
@@ -100,7 +100,7 @@ class RailProject:
         flavors = self.get_flavors()
         flavor = flavors.get(name, None)
         if flavor is None:
-            raise ValueError(f"flavor '{name}' not found in {self}")
+            raise KeyError(f"flavor '{name}' not found in {self}")
         return flavor
 
     def get_file_for_flavor(self, flavor, label, **kwargs):
@@ -112,7 +112,7 @@ class RailProject:
         try:
             file_alias = flavor_dict['FileAliases'][label]
         except KeyError as msg:
-            raise ValueError(f"Label '{label}' not found in flavor '{flavor}'") from msg
+            raise KeyError(f"Label '{label}' not found in flavor '{flavor}'") from msg
         return self.get_file(file_alias, flavor=flavor, label=label, **kwargs)
 
     def get_file_metadata_for_flavor(self, flavor, label):
@@ -124,7 +124,7 @@ class RailProject:
         try:
             file_alias = flavor_dict['FileAliases'][label]
         except KeyError as msg:
-            raise ValueError(f"Label '{label}' not found in flavor '{flavor}'") from msg
+            raise KeyError(f"Label '{label}' not found in flavor '{flavor}'") from msg
         return self.get_files()[file_alias]
 
     def get_selections(self):
@@ -136,7 +136,7 @@ class RailProject:
         selections = self.get_selections()
         selection = selections.get(name, None)
         if selection is None:
-            raise ValueError(f"selection '{name}' not found in {self}")
+            raise KeyError(f"selection '{name}' not found in {self}")
         return selection
 
     def get_pzalgorithms(self):
@@ -148,7 +148,7 @@ class RailProject:
         pzalgorithms = self.get_pzalgorithms()
         pzalgorithm = pzalgorithms.get(name, None)
         if pzalgorithm is None:
-            raise ValueError(f"pz algorithm '{name}' not found in {self}")
+            raise KeyError(f"pz algorithm '{name}' not found in {self}")
         return pzalgorithm
 
     def get_nzalgorithms(self):
@@ -160,7 +160,7 @@ class RailProject:
         nzalgorithms = self.get_nzalgorithms()
         nzalgorithm = nzalgorithms.get(name, None)
         if nzalgorithm is None:
-            raise ValueError(f"nz algorithm '{name}' not found in {self}")
+            raise KeyError(f"nz algorithm '{name}' not found in {self}")
         return nzalgorithm
 
     def get_spec_selections(self):
@@ -172,7 +172,7 @@ class RailProject:
         spec_selections = self.get_spec_selections()
         spec_selection = spec_selections.get(name, None)
         if spec_selection is None:
-            raise ValueError(f"spectroscopic selection '{name}' not found in {self}")
+            raise KeyError(f"spectroscopic selection '{name}' not found in {self}")
         return spec_selection
     
     def get_classifiers(self):
@@ -181,10 +181,10 @@ class RailProject:
 
     def get_classifier(self, name):
         """ Get the information about a particular tomographic bin classification"""
-        classifiers = self.get_classifier()
+        classifiers = self.get_classifiers()
         classifier = classifiers.get(name, None)
         if classifier is None:
-            raise ValueError(f"tomographic bin classifier '{name}' not found in {self}")
+            raise KeyError(f"tomographic bin classifier '{name}' not found in {self}")
         return classifier
 
     def get_summarizers(self):
@@ -193,10 +193,10 @@ class RailProject:
 
     def get_summarizer(self, name):
         """ Get the information about a particular NZ summarization algorithms"""
-        summarizers = self.get_summarizer()
+        summarizers = self.get_summarizers()
         summarizer = summarizers.get(name, None)
         if summarizer is None:
-            raise ValueError(f"NZ summarizer '{name}' not found in {self}")
+            raise KeyError(f"NZ summarizer '{name}' not found in {self}")
         return summarizer
 
     def get_catalogs(self):
@@ -216,7 +216,10 @@ class RailProject:
     def get_pipeline(self, name):
         """ Get the information about a particular ceci pipeline"""        
         pipelines = self.get_pipelines()
-        return pipelines.get(name, None)
+        pipeline = pipelines.get(name, None)
+        if pipeline is None:
+            raise KeyError(f"pipeline '{name}' not found in {self}")
+        return pipeline
 
     def get_flavor_args(self, flavors):
         """ Get the 'flavors' to iterate a particular command over
