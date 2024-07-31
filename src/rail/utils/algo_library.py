@@ -31,11 +31,11 @@ PZ_ALGORITHMS = dict(
         Estimate='GPzEstimator',
         Module='rail.estimation.algos.gpz',
     ),
-    tpz=dict(
-        Inform='TPZliteInformer',
-        Estimate='TPZliteEstimator',
-        Module='rail.estimation.algos.tpz_lite',
-    ),
+    #tpz=dict(
+    #    Inform='TPZliteInformer',
+    #    Estimate='TPZliteEstimator',
+    #    Module='rail.estimation.algos.tpz_lite',
+    #),
     #lephare=dict(
     #    Inform='LephareInformer',
     #    Estimate='LephareEstimator',
