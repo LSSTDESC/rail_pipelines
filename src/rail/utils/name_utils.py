@@ -225,7 +225,7 @@ class NameFactory:
         if (path_value := config.get(path_key)) is not None:
             formatted = _format_template(path_value, **kwargs, **self.interpolants)
         else:
-            raise ValueError(f"Path '{path_key}' not found in {config}")
+            raise KeyError(f"Path '{path_key}' not found in {config}")
         return formatted
 
 

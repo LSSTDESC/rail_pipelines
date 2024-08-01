@@ -34,8 +34,6 @@ def test_project():
     assert set(all_flavors) == set(flavors.keys())
     assert project.get_flavor_args(['dummy'])[0] == 'dummy'    
 
-
-    
     project.get_file_for_flavor('baseline', 'test')
     with pytest.raises(KeyError):
         project.get_file_for_flavor('baseline', 'does not exist')
@@ -50,6 +48,12 @@ def test_project():
     assert set(all_selections) == set(selections.keys())
     assert project.get_selection_args(['dummy'])[0] == 'dummy'    
 
+    itr = project.generate_kwargs_iterable(
+        selections=all_selections,
+        flavors=all_flavors,
+    )
+    for x_ in itr:
+        assert isinstance(x_, dict)
     
     pz_algos = project.get_pzalgorithms()
     check_get_func(project.get_pzalgorithm, pz_algos)
@@ -67,13 +71,19 @@ def test_project():
     check_get_func(project.get_summarizer, summarizers)
     
     catalogs = project.get_catalogs()
-    #check_get_func(project.get_catalog, catalogs)
+    check_get_func(project.get_catalog, catalogs)
     
     pipelines = project.get_pipelines()
     check_get_func(project.get_pipeline, pipelines)
 
-
-    
+    ceci_command = project.generate_ceci_command(
+        pipeline_path='dummy.yaml', 
+        config=None, 
+        inputs={'bob':'bob.pkl'},
+        output_dir='.', 
+        log_dir='.',
+        alice='bob',
+    )
      
 
     

@@ -206,8 +206,11 @@ class RailProject:
     def get_catalog(self, catalog, **kwargs):
         """ Resolve the path for a particular catalog file"""
         catalog_dict = self.config['Catalogs'].get(catalog, {})
-        path = self.name_factory.resolve_path(catalog_dict, "PathTemplate", **kwargs)
-        return path
+        try:
+            path = self.name_factory.resolve_path(catalog_dict, "PathTemplate", **kwargs)
+            return path
+        except KeyError as msg:
+            raise KeyError(f"PathTemplate not found in {catalog}") from msg
 
     def get_pipelines(self):
         """ Get the dictionary describing all the types of ceci pipelines"""
