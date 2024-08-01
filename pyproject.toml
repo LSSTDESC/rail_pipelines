@@ -18,6 +18,8 @@ dynamic = ["version"]
 
 dependencies = [
     "pz-rail-base",
+    "click",
+    "pyarrow",
 ]
 
 # On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
@@ -35,6 +37,9 @@ dev = [
     "pylint", # Used for static linting of files
 ]
 
+[project.scripts]
+rail_pipe = "rail.cli.pipe_commands:pipe_cli"
+
 [build-system]
 requires = [
     "setuptools>=62", # Used to build and package the Python project
@@ -44,7 +49,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-write_to = "src/rail/pipelines/_version.py"
+write_to = "src/rail/_pipelines/_version.py"
 
 [tool.pytest.ini_options]
 testpaths = [
