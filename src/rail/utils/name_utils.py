@@ -76,7 +76,7 @@ def _resolve_dict(source, interpolants):
             match v:
                 case dict():
                     v_interpolated = _resolve_dict(source[k], interpolants)
-                case list():
+                case list():                
                     v_interpolated = [_resolve_dict(_v, interpolants) for _v in v]
                 case str():
                     v_interpolated = v.format(**interpolants)
