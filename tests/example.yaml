@@ -42,8 +42,8 @@ Pipelines:
         PipelineClass: rail.pipelines.utility.apply_phot_errors.ApplyPhotErrorsPipeline
         CatalogTag: roman_rubin
         InputCatalogTag: reduced
-	kwargs:
-	    error_models: ErrorModels
+        kwargs:
+            error_models: ErrorModels
     spec_selection:
         PipelineClass: rail.pipelines.utility.spectroscopic_selection_pipeline.SpectroscopicSelectionPipeline
         CatalogTag: roman_rubin
