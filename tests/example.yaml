@@ -181,7 +181,7 @@ Summarizers:
         Module: rail.estimation.algos.point_est_hist
 
 # The describe the error models we use in the truth_to_observed pipeline
-ErrorModels: 
+ErrorModels:
     lsst:
         ErrorModel: LSSTErrorModel
         Module: rail.creation.degraders.photometric_errors

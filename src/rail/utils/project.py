@@ -17,7 +17,7 @@ class RailProject:
         "Catalogs": {},
         "Files": {},
         "Pipelines": {},
-        "Flavors": {},        
+        "Flavors": {},
         "Selections": {},
         "ErrorModels": {},
         "PZAlgorithms": {},
@@ -151,7 +151,7 @@ class RailProject:
         if error_model is None:
             raise KeyError(f"error_models '{name}' not found in {self}")
         return error_model
-    
+
     def get_pzalgorithms(self):
         """ Get the dictionary describing all the PZ estimation algorithms"""
         return self.config.get("PZAlgorithms")
@@ -187,7 +187,7 @@ class RailProject:
         if spec_selection is None:
             raise KeyError(f"spectroscopic selection '{name}' not found in {self}")
         return spec_selection
-    
+
     def get_classifiers(self):
         """ Get the dictionary describing all the tomographic bin classification"""
         return self.config.get("Classifiers")
@@ -230,7 +230,7 @@ class RailProject:
         return self.config.get("Pipelines")
 
     def get_pipeline(self, name):
-        """ Get the information about a particular ceci pipeline"""        
+        """ Get the information about a particular ceci pipeline"""
         pipelines = self.get_pipelines()
         pipeline = pipelines.get(name, None)
         if pipeline is None:
@@ -243,7 +243,7 @@ class RailProject:
         Notes
         -----
         If the flavor 'all' is included in the list of flavors, this
-        will replace the list with all the flavors defined in this project        
+        will replace the list with all the flavors defined in this project
         """
         flavor_dict = self.get_flavors()
         if 'all' in flavors:
@@ -256,8 +256,8 @@ class RailProject:
         Notes
         -----
         If the selection 'all' is included in the list of selections, this
-        will replace the list with all the selections defined in this project        
-        """        
+        will replace the list with all the selections defined in this project
+        """
         selection_dict = self.get_selections()
         if 'all' in selections:
             return list(selection_dict.keys())
