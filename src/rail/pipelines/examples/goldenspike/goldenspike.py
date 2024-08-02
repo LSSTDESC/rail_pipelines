@@ -8,7 +8,7 @@ import numpy as np
 # Various rail modules
 from rail.core.stage import RailStage, RailPipeline
 from rail.creation.engines.flowEngine import FlowCreator
-from rail.creation.degraders.lsst_error_model import LSSTErrorModel
+from rail.creation.degraders.photometric_errors import LSSTErrorModel
 from rail.creation.degraders.quantityCut import QuantityCut
 from rail.creation.degraders.spectroscopic_degraders import LineConfusion, InvRedshiftIncompleteness
 from rail.tools.table_tools import ColumnMapper, TableConverter
