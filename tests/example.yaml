@@ -42,6 +42,8 @@ Pipelines:
         PipelineClass: rail.pipelines.utility.apply_phot_errors.ApplyPhotErrorsPipeline
         CatalogTag: roman_rubin
         InputCatalogTag: reduced
+        kwargs:
+            error_models: ErrorModels
     spec_selection:
         PipelineClass: rail.pipelines.utility.spectroscopic_selection_pipeline.SpectroscopicSelectionPipeline
         CatalogTag: roman_rubin
@@ -177,6 +179,15 @@ Summarizers:
     point_est_hist:
         Summarize: PointEstHistMaskedSummarizer
         Module: rail.estimation.algos.point_est_hist
+
+# The describe the error models we use in the truth_to_observed pipeline
+ErrorModels:
+    lsst:
+        ErrorModel: LSSTErrorModel
+        Module: rail.creation.degraders.photometric_errors
+    roman:
+        ErrorModel: RomanErrorModel
+        Module: rail.creation.degraders.photometric_errors
 
 
 # These are variables that we iterate over when running over entire catalogs
