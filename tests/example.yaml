@@ -186,7 +186,7 @@ ErrorModels:
         ErrorModel: LSSTErrorModel
         Module: rail.creation.degraders.photometric_errors
     roman:
-        ErrorModel:
+        ErrorModel: RomanErrorModel
         Module: rail.creation.degraders.photometric_errors
 
 
