@@ -55,6 +55,9 @@ def test_project():
     for x_ in itr:
         assert isinstance(x_, dict)
     
+    error_modles = project.get_error_models()
+    check_get_func(project.get_error_model, error_models)
+
     pz_algos = project.get_pzalgorithms()
     check_get_func(project.get_pzalgorithm, pz_algos)
     
