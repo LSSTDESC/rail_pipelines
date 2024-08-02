@@ -17,8 +17,9 @@ class RailProject:
         "Catalogs": {},
         "Files": {},
         "Pipelines": {},
-        "Flavors": {},
+        "Flavors": {},        
         "Selections": {},
+        "ErrorModels": {},
         "PZAlgorithms": {},
         "NZAlgorithms": {},
         "SpecSelections": {},
@@ -139,6 +140,18 @@ class RailProject:
             raise KeyError(f"selection '{name}' not found in {self}")
         return selection
 
+    def get_error_models(self):
+        """ Get the dictionary describing all the photometric error model algorithms"""
+        return self.config.get("ErrorModels")
+
+    def get_error_model(self, name):
+        """ Get the information about a particular photometric error model algorithms"""
+        error_models = self.get_error_models()
+        error_model = error_models.get(name, None)
+        if error_model is None:
+            raise KeyError(f"error_models '{name}' not found in {self}")
+        return error_models
+    
     def get_pzalgorithms(self):
         """ Get the dictionary describing all the PZ estimation algorithms"""
         return self.config.get("PZAlgorithms")

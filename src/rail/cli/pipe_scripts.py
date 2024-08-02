@@ -586,6 +586,8 @@ def build_pipelines(project, flavor='baseline'):
                 pipeline_kwargs[key] = project.get_classifiers()
             elif val == 'Summarizers':
                 pipeline_kwargs[key] = project.get_summarizers()
+            elif val == 'ErrorModels':
+                pipeline_kwargs[key] = project.get_error_models()
                 
         if overrides:
             pipe_ctor_kwargs = overrides.pop('kwargs', {})
