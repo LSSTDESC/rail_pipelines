@@ -150,7 +150,7 @@ class RailProject:
         error_model = error_models.get(name, None)
         if error_model is None:
             raise KeyError(f"error_models '{name}' not found in {self}")
-        return error_models
+        return error_model
     
     def get_pzalgorithms(self):
         """ Get the dictionary describing all the PZ estimation algorithms"""
