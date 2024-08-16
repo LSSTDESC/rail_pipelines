@@ -83,6 +83,22 @@ def spectroscopic_selection_pipeline(config_file, **kwargs):
     return ok
 
 
+@pipe_cli.command(name="blending")
+@pipe_options.config_file()
+@pipe_options.selection()
+@pipe_options.flavor()
+@pipe_options.run_mode()
+def blending_pipeline(config_file, **kwargs):
+    """Run the truth-to-observed data pipeline"""
+    project = RailProject.load_config(config_file)
+    flavors = project.get_flavor_args(kwargs.pop('flavor'))
+    selections = project.get_selection_args(kwargs.pop('selection'))
+    iter_kwargs = project.generate_kwargs_iterable(flavor=flavors, selection=selections)
+    ok = 0
+    for kw in iter_kwargs:
+        ok |= pipe_scripts.blending_pipeline(project, **kw, **kwargs)
+    return ok
+
 
 @pipe_cli.command(name="subsample")
 @pipe_options.config_file()
