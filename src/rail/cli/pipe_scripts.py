@@ -281,7 +281,7 @@ def blending_pipeline(
                 **iteration_kwargs,
             )
             sink_catalog = project.get_catalog(
-                'blended',
+                'degraded',
                 selection=selection,
                 flavor=flavor,
                 **iteration_kwargs,
@@ -314,7 +314,7 @@ def blending_pipeline(
                     [
                         ["mkdir", "-p", f"{sink_dir}"],
                         ceci_command,
-                        *[convert_commands],
+                        *[convert_command],
                     ],
                     script_path,
                 )
