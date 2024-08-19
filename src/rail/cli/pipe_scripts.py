@@ -277,7 +277,6 @@ def blending_pipeline(
                 input_catalog_name,
                 selection=selection,
                 flavor=flavor,
-                basename="output_dereddener_errors.pq",
                 **iteration_kwargs,
             )
             sink_catalog = project.get_catalog(
@@ -696,6 +695,8 @@ def build_pipelines(project, flavor='baseline'):
         module = '.'.join(tokens[:-1])
         class_name = tokens[-1]
         log_dir = f"{output_dir}/logs/{pipeline_name}"
+
+        print(f"Writing {output_yaml}")
 
         __import__(module)
         RailPipeline.build_and_write(
