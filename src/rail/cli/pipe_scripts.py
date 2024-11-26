@@ -245,6 +245,87 @@ def spectroscopic_selection_pipeline(
     return 1
 
 
+def blending_pipeline(
+    project,
+    selection,
+    flavor,
+    run_mode=RunMode.bash,
+):
+    pipeline_name = "blending"
+    pipeline_info = project.get_pipeline(pipeline_name)
+    pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, flavor=flavor)
+
+    input_catalog_name = pipeline_info['InputCatalogTag']
+    input_catalog = project.get_catalogs().get(input_catalog_name)
+   
+    # Loop through all possible combinations of the iteration variables that are
+    # relevant to this pipeline
+    if (iteration_vars := input_catalog.get("IterationVars")) is not None:
+        iterations = itertools.product(
+            *[
+                project.config.get("IterationVars").get(iteration_var)
+                for iteration_var in iteration_vars
+            ]
+        )
+        for iteration_args in iterations:
+            iteration_kwargs = {
+                iteration_vars[i]: iteration_args[i]
+                for i in range(len(iteration_vars))
+            }
+
+            source_catalog = project.get_catalog(
+                input_catalog_name,
+                selection=selection,
+                flavor=flavor,
+                **iteration_kwargs,
+            )
+            sink_catalog = project.get_catalog(
+                'degraded',
+                selection=selection,
+                flavor=flavor,
+                **iteration_kwargs,
+            )
+            sink_dir = os.path.dirname(sink_catalog)
+            script_path = os.path.join(sink_dir, f"submit_{pipeline_name}_{selection}_{flavor}.sh")
+
+            ceci_command = project.generate_ceci_command(
+                pipeline_path=pipeline_path,
+                config=pipeline_path.replace('.yaml', '_config.yml'),
+                inputs=dict(input=source_catalog),
+                output_dir=sink_dir,
+                log_dir=sink_dir,
+            )
+
+            convert_command = [
+                "tables-io",
+                "convert",
+                "--input",
+                f"{sink_dir}/output_blended.pq",
+                "--output",
+                f"{sink_dir}/output_blended.hdf5",
+            ]
+                
+            if not os.path.isfile(source_catalog):
+                raise ValueError(f"Input file {source_catalog} not found")
+            try:
+                handle_commands(
+                    run_mode,
+                    [
+                        ["mkdir", "-p", f"{sink_dir}"],
+                        ceci_command,
+                        *[convert_command],
+                    ],
+                    script_path,
+                )
+            except Exception as msg:
+                print(msg)
+                return 1
+        return 0
+
+    # FIXME need to get catalogs even if iteration not specified; this return fallback isn't ideal
+    return 1
+
+
 def inform_pipeline(
     project,
     selection="gold",
@@ -614,6 +695,8 @@ def build_pipelines(project, flavor='baseline'):
         module = '.'.join(tokens[:-1])
         class_name = tokens[-1]
         log_dir = f"{output_dir}/logs/{pipeline_name}"
+
+        print(f"Writing {output_yaml}")
 
         __import__(module)
         RailPipeline.build_and_write(

@@ -39,17 +39,22 @@ Files:
 # These are ceci pipelines that we will be running
 Pipelines: 
     truth_to_observed:
-        PipelineClass: rail.pipelines.utility.apply_phot_errors.ApplyPhotErrorsPipeline
+        PipelineClass: rail.pipelines.degradation.apply_phot_errors.ApplyPhotErrorsPipeline
         CatalogTag: roman_rubin
         InputCatalogTag: reduced
         kwargs:
             error_models: ErrorModels
+    blending:
+        PipelineClass: rail.pipelines.degradation.blending_pipeline.BlendingPipeline
+        CatalogTag: roman_rubin
+        InputCatalogTag: degraded
+        kwargs: {}
     spec_selection:
-        PipelineClass: rail.pipelines.utility.spectroscopic_selection_pipeline.SpectroscopicSelectionPipeline
+        PipelineClass: rail.pipelines.degradation.spectroscopic_selection_pipeline.SpectroscopicSelectionPipeline
         CatalogTag: roman_rubin
         kwargs:
             selectors: SpecSelections
-        InputCatalogTag: degraded  
+        InputCatalogTag: degraded
     inform:
         PipelineClass: rail.pipelines.estimation.inform_all.InformPipeline
         CatalogTag: roman_rubin
