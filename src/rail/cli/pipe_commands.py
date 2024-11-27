@@ -37,15 +37,19 @@ def build_pipelines(config_file, **kwargs):
 @pipe_cli.command()
 @pipe_options.config_file()
 @pipe_options.selection()
+@pipe_options.input_tag()
+@pipe_options.input_selection()
 @pipe_options.run_mode()
 def reduce_roman_rubin(config_file, **kwargs):
     """Reduce the roman rubin simulations for PZ analysis"""
     project = RailProject.load_config(config_file)
     selections = project.get_selection_args(kwargs.pop('selection'))
-    iter_kwargs = project.generate_kwargs_iterable(selection=selections)
+    input_selections = kwargs.pop('input_selection')
+    iter_kwargs = project.generate_kwargs_iterable(selection=selections, input_selection=input_selections)
+    input_tag = kwargs.pop('input_tag', 'truth')
     ok = 0
     for kw in iter_kwargs:
-        ok |= reduce_roman_rubin_data(project, **kw, **kwargs)
+        ok |= reduce_roman_rubin_data(project, input_tag, **kw, **kwargs)
     return ok
 
 
