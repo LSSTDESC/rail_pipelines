@@ -88,6 +88,8 @@ PROJECTIONS = [
 
 def reduce_roman_rubin_data(
     project,
+    input_tag,
+    input_selection,
     selection,
     run_mode=RunMode.bash,
 ):
@@ -117,8 +119,8 @@ def reduce_roman_rubin_data(
                 iteration_vars[i]: iteration_args[i]
                 for i in range(len(iteration_vars))
             }
-
-            source_catalog = project.get_catalog('truth', **iteration_kwargs)
+            input_selection = iteration_kwargs.pop('input_selection', None)
+            source_catalog = project.get_catalog(input_tag, selection=input_selection, **iteration_kwargs)
             sink_catalog = project.get_catalog('reduced', selection=selection, **iteration_kwargs)
             sink_dir = os.path.dirname(sink_catalog)
             if selection_dict:

@@ -15,6 +15,8 @@ __all__ = [
     "flavor",
     "input_dir",
     "input_file",
+    "input_selection",
+    "input_tag",
     "label",
     "maglim",
     "model_dir",
@@ -86,6 +88,22 @@ input_file = PartialOption(
     "--input_file",
     type=click.Path(),
     help="Input file",
+)
+
+
+input_selection = PartialOption(
+    "--input_selection",
+    help="Data selection",
+    multiple=True,
+    default=[None],
+)
+
+
+input_tag = PartialOption(
+    "--input_tag",
+    type=str,
+    default=None,
+    help="Input Catalog tag",
 )
 
 
