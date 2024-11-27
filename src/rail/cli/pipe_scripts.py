@@ -348,7 +348,7 @@ def run_pipeline_on_single_input(
     sink_dir = project.get_path('ceci_output_dir', **kwargs)
     script_path = os.path.join(sink_dir, f"submit_{pipeline_name}.sh")
 
-    input_files = input_callback(project, pipeline_name)
+    input_files = input_callback(project, pipeline_name, sink_dir, **kwargs)
 
     command_line = project.generate_ceci_command(
         pipeline_path=pipeline_path,
@@ -396,8 +396,9 @@ def inform_input_callback(
     pipeline_info = project.get_pipeline(pipeline_name)
     input_files = {}
     input_file_tags = pipeline_info['InputFileTags']
+    flavor = kwargs.pop('flavor', 'baseline')
     for key, val in input_file_tags.items():
-        input_file_flavor = val.get('flavor', 'baseline')
+        input_file_flavor = val.get('flavor', flavor)
         input_files[key] = project.get_file_for_flavor(input_file_flavor, val['tag'], **kwargs)
     return input_files
 
@@ -432,8 +433,9 @@ def estimate_input_callback(
     pipeline_info = project.get_pipeline(pipeline_name)
     input_files = {}
     input_file_tags = pipeline_info['InputFileTags']
+    flavor = kwargs.pop('flavor', 'baseline')
     for key, val in input_file_tags.items():
-        input_file_flavor = val.get('flavor', 'baseline')
+        input_file_flavor = val.get('flavor', flavor)
         input_files[key] = project.get_file_for_flavor(input_file_flavor, val['tag'], **kwargs)
 
     pz_algorithms = project.get_pzalgorithms()
@@ -472,8 +474,9 @@ def evaluate_input_callback(
     pipeline_info = project.get_pipeline(pipeline_name)
     input_files = {}
     input_file_tags = pipeline_info['InputFileTags']
+    flavor = kwargs.pop('flavor', 'baseline')
     for key, val in input_file_tags.items():
-        input_file_flavor = val.get('flavor', 'baseline')
+        input_file_flavor = val.get('flavor', flavor)
         input_files[key] = project.get_file_for_flavor(input_file_flavor, val['tag'], **kwargs)
 
     pdfs_dir = sink_dir
@@ -513,7 +516,7 @@ def pz_input_callback(
     pipeline_info = project.get_pipeline(pipeline_name)
     input_files = {}
     input_file_tags = pipeline_info['InputFileTags']
-    flavor = kwargs.get('flavor')
+    flavor = kwargs.pop('flavor')
     for key, val in input_file_tags.items():
         input_file_flavor = val.get('flavor', flavor)
         input_files[key] = project.get_file_for_flavor(input_file_flavor, val['tag'], **kwargs)
@@ -550,7 +553,7 @@ def tomography_input_callback(
     pipeline_info = project.get_pipeline(pipeline_name)
     input_files = {}
     input_file_tags = pipeline_info['InputFileTags']
-    flavor = kwargs.get('flavor')
+    flavor = kwargs.pop('flavor')
     selection = kwargs.get('selection')
     for key, val in input_file_tags.items():
         input_file_flavor = val.get('flavor', flavor)
@@ -594,7 +597,7 @@ def sompz_input_callback(
     pipeline_info = project.get_pipeline(pipeline_name)
     input_file_dict = {}
     input_file_tags = pipeline_info['InputFileTags']
-    flavor = kwargs.get('flavor')
+    flavor = kwargs.pop('flavor')
     selection = kwargs.get('selection')
     for key, val in input_file_tags.items():
         input_file_flavor = val.get('flavor', flavor)
