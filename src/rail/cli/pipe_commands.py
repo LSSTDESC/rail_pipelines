@@ -24,7 +24,7 @@ def inspect(config_file):
 @pipe_options.config_file()
 @pipe_options.flavor()
 def build_pipelines(config_file, **kwargs):
-    """Reduce the roman rubin simulations for PZ analysis"""
+    """Build the ceci pipeline configuraiton files"""
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
     iter_kwargs = project.generate_kwargs_iterable(flavor=flavors)
@@ -55,14 +55,23 @@ def reduce_roman_rubin(config_file, **kwargs):
 @pipe_options.flavor()
 @pipe_options.run_mode()
 def truth_to_observed_pipeline(config_file, **kwargs):
-    """Run the truth-to-observed data pipeline"""
+    """Run the truth-to-observed analysis pipeline"""
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
     selections = project.get_selection_args(kwargs.pop('selection'))
     iter_kwargs = project.generate_kwargs_iterable(flavor=flavors, selection=selections)
     ok = 0
+    pipeline_name = "truth_to_observed"
+   
+    pipeline_catalog_config = pipe_scripts.TruthToObservedPipelineCatalogConfiguration(
+        project, source_catalog_tag='reduced', sink_catalog_tag='degraded',
+    )
     for kw in iter_kwargs:
-        ok |= pipe_scripts.truth_to_observed_pipeline(project, **kw, **kwargs)
+        ok |= pipe_scripts.run_pipeline_on_catalog(
+            project, pipeline_name,
+            pipeline_catalog_config,
+            **kw, **kwargs,
+        )
     return ok
 
 
@@ -72,14 +81,29 @@ def truth_to_observed_pipeline(config_file, **kwargs):
 @pipe_options.flavor()
 @pipe_options.run_mode()
 def spectroscopic_selection_pipeline(config_file, **kwargs):
-    """Run the truth-to-observed data pipeline"""
+    """Run the spectroscopic selection analysis pipeline"""
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
     selections = project.get_selection_args(kwargs.pop('selection'))
     iter_kwargs = project.generate_kwargs_iterable(flavor=flavors, selection=selections)
     ok = 0
+    pipeline_name = "spec_selection"
+    pipeline_info = project.get_pipeline(pipeline_name)
+    input_catalog_name = pipeline_info['InputCatalogTag']
+
+    pipeline_catalog_config = pipe_scripts.SpectroscopicPipelineCatalogConfiguration(
+        project,
+        source_catalog_tag=input_catalog_name,
+        sink_catalog_tag='degraded',
+        source_catalog_basename="output_dereddener_errors.pq",
+    )
+
     for kw in iter_kwargs:
-        ok |= pipe_scripts.spectroscopic_selection_pipeline(project, **kw, **kwargs)
+        ok |= pipe_scripts.run_pipeline_on_catalog(
+            project, pipeline_name,
+            pipeline_catalog_config,
+            **kw, **kwargs,
+        )
     return ok
 
 
@@ -89,14 +113,27 @@ def spectroscopic_selection_pipeline(config_file, **kwargs):
 @pipe_options.flavor()
 @pipe_options.run_mode()
 def blending_pipeline(config_file, **kwargs):
-    """Run the truth-to-observed data pipeline"""
+    """Run the blending analysis pipeline"""
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
     selections = project.get_selection_args(kwargs.pop('selection'))
     iter_kwargs = project.generate_kwargs_iterable(flavor=flavors, selection=selections)
     ok = 0
+    pipeline_name = "blending"
+    pipeline_info = project.get_pipeline(pipeline_name)
+    input_catalog_name = pipeline_info['InputCatalogTag']
+    pipeline_catalog_config = pipe_scripts.BlendingPipelineCatalogConfiguration(
+        project,
+        source_catalog_tag=input_catalog_name,
+        sink_catalog_tag='degraded',
+    )
+
     for kw in iter_kwargs:
-        ok |= pipe_scripts.blending_pipeline(project, **kw, **kwargs)
+        ok |= pipe_scripts.run_pipeline_on_catalog(
+            project, pipeline_name,
+            pipeline_catalog_config,
+            **kw, **kwargs,
+        )
     return ok
 
 
@@ -131,7 +168,11 @@ def inform(config_file, **kwargs):
     iter_kwargs = project.generate_kwargs_iterable(flavor=flavors, selection=selections)
     ok = 0
     for kw in iter_kwargs:
-        ok |= pipe_scripts.inform_pipeline(project, **kw, **kwargs)
+        ok |= pipe_scripts.run_pipeline_on_single_input(
+            project, "inform",
+            pipe_scripts.inform_input_callback,
+            **kw, **kwargs,
+        )
     return ok
 
 
@@ -148,7 +189,11 @@ def estimate_single(config_file, **kwargs):
     iter_kwargs = project.generate_kwargs_iterable(flavor=flavors, selection=selections)
     ok = 0
     for kw in iter_kwargs:
-        ok |= pipe_scripts.estimate_single(project, **kw, **kwargs)
+        ok |= pipe_scripts.run_pipeline_on_single_input(
+            project, "estimate",
+            pipe_scripts.estimate_input_callback,
+            **kw, **kwargs,
+        )
     return ok
 
 
@@ -165,7 +210,11 @@ def evaluate_single(config_file, **kwargs):
     iter_kwargs = project.generate_kwargs_iterable(flavor=flavors, selection=selections)
     ok = 0
     for kw in iter_kwargs:
-        ok |= pipe_scripts.evaluate_single(project, **kw, **kwargs)
+        ok |= pipe_scripts.run_pipeline_on_single_input(
+            project, "evaluate",
+            pipe_scripts.evaluate_input_callback,
+            **kw, **kwargs,
+        )
     return ok
 
 
@@ -182,7 +231,11 @@ def pz_single(config_file, **kwargs):
     iter_kwargs = project.generate_kwargs_iterable(flavor=flavors, selection=selections)
     ok = 0
     for kw in iter_kwargs:
-        ok |= pipe_scripts.pz_single(project, **kw, **kwargs)
+        ok |= pipe_scripts.run_pipeline_on_single_input(
+            project, "pz",
+            pipe_scripts.pz_input_callback,
+            **kw, **kwargs,
+        )
     return ok
 
 
@@ -192,14 +245,18 @@ def pz_single(config_file, **kwargs):
 @pipe_options.selection()
 @pipe_options.run_mode()
 def tomography_single(config_file, **kwargs):
-    """Run the pz pipeline"""
+    """Run the tomography pipeline"""
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
     selections = project.get_selection_args(kwargs.pop('selection'))
     iter_kwargs = project.generate_kwargs_iterable(flavor=flavors, selection=selections)
     ok = 0
     for kw in iter_kwargs:
-        ok |= pipe_scripts.tomography_single(project, **kw, **kwargs)
+        ok |= pipe_scripts.run_pipeline_on_single_input(
+            project, "tomography",
+            pipe_scripts.tomography_input_callback,
+            **kw, **kwargs,
+        )
     return ok
 
 
@@ -209,12 +266,16 @@ def tomography_single(config_file, **kwargs):
 @pipe_options.selection()
 @pipe_options.run_mode()
 def sompz_single(config_file, **kwargs):
-    """Run the pz pipeline"""
+    """Run the sompz pipeline"""
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
     selections = project.get_selection_args(kwargs.pop('selection'))
     iter_kwargs = project.generate_kwargs_iterable(flavor=flavors, selection=selections)
     ok = 0
     for kw in iter_kwargs:
-        ok |= pipe_scripts.sompz_single(project, **kw, **kwargs)
+        ok |= pipe_scripts.run_pipeline_on_single_input(
+            project, "sompz",
+            pipe_scripts.sompz_input_callback,
+            **kw, **kwargs,
+        )
     return ok
