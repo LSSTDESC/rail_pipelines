@@ -165,9 +165,11 @@ class PipelineCatalogConfiguration:
         )
 
     def get_script_path(self, pipeline_name: str, sink_dir: str, **kwargs: Any) -> str:
+        selection = kwargs['selection']
+        flavor = kwargs['flavor']
         return os.path.join(
             sink_dir,
-            "submit_{pipeline_name}_{selection}_{flavor}.sh".format(pipeline_name=pipeline_name, **kwargs),
+            f"submit_{pipeline_name}_{selection}_{flavor}.sh"
         )
 
     def get_convert_commands(self, sink_dir: str) -> list[list[str]]:
@@ -362,7 +364,7 @@ def run_pipeline_on_single_input(
         statuscode = handle_commands(run_mode, [command_line], script_path)
     except Exception as msg:
         print(msg)
-        return 1
+        statuscode = 1
     return statuscode
 
 
