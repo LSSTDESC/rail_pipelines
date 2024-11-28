@@ -3,6 +3,7 @@ import subprocess
 import pprint
 import time
 import itertools
+from typing import Any, Callable
 
 import numpy as np
 import pyarrow.parquet as pq
@@ -15,7 +16,25 @@ from rail.utils.project import RailProject
 from rail.cli.pipe_options import RunMode
 
 
-def handle_command(run_mode, command_line):
+def handle_command(
+    run_mode: RunMode,
+    command_line: list[str],
+) -> int:
+    """ Run a single command in the mode requested
+
+    Parameters
+    ----------
+    run_mode: RunMode
+        How to run the command, e.g., dry_run, bash or slurm
+
+    command_line: list[str]
+        Tokens in the command line
+
+    Returns
+    -------
+    returncode: int
+        Status returned by the command.  0 for success, exit code otherwise
+    """
     print("subprocess:", *command_line)
     _start_time = time.time()
     print(">>>>>>>>")
@@ -37,7 +56,29 @@ def handle_command(run_mode, command_line):
     return returncode
 
 
-def handle_commands(run_mode, command_lines, script_path=None):
+def handle_commands(
+    run_mode: RunMode,
+    command_lines: list[list[str]],
+    script_path:str | None=None,
+) -> int:
+    """ Run a multiple commands in the mode requested
+
+    Parameters
+    ----------
+    run_mode: RunMode
+        How to run the command, e.g., dry_run, bash or slurm
+
+    command_lines: list[list[str]]
+        List of commands to run, each one is the list of tokens in the command line
+
+    script_path: str | None
+        Path to write the slurm submit script to
+
+    Returns
+    -------
+    returncode: int
+        Status returned by the commands.  0 for success, exit code otherwise
+    """
 
     if run_mode in [RunMode.dry_run, RunMode.bash]:
         for command_ in command_lines:
@@ -72,9 +113,22 @@ def handle_commands(run_mode, command_lines, script_path=None):
             return line.split("|")[0]
     except TypeError as msg:
         raise TypeError(f"Bad slurm submit: {msg}") from msg
+    return 0
 
 
-def inspect(config_file):
+def inspect(config_file: str) -> int:
+    """ Inspect a rail project file and print out the configuration
+
+    Parameters
+    ----------
+    config_file: str
+        Project file in question
+
+    Returns
+    -------
+    returncode: int
+        Status.  0 for success, exit code otherwise
+    """
     project = RailProject.load_config(config_file)
     printable_config = pprint.pformat(project.config, compact=True)
     print(f"RAIL Project: {project}")
@@ -84,15 +138,127 @@ def inspect(config_file):
     return 0
 
 
-def truth_to_observed_pipeline(
-    project,
-    selection,
-    flavor,
-    run_mode=RunMode.bash,
-):
-    pipeline_name = "truth_to_observed"
+class PipelineCatalogConfiguration:
+
+    def __init__(
+        self,
+        project: RailProject,
+        source_catalog_tag: str,
+        sink_catalog_tag: str,
+        source_catalog_basename: str | None=None,
+        sink_catalog_basename: str | None=None,
+    ):
+        self._project = project
+        self._source_catalog_tag = source_catalog_tag
+        self._sink_catalog_tag = sink_catalog_tag
+        self._source_catalog_basename = source_catalog_basename
+        self._sink_catalog_basename = sink_catalog_basename
+
+    def get_source_catalog(self, **kwargs: Any) -> str:
+        return self._project.get_catalog(
+            self._source_catalog_tag, basename=self._source_catalog_basename, **kwargs,
+        )
+
+    def get_sink_catalog(self, **kwargs: Any) -> str:
+        return self._project.get_catalog(
+            self._sink_catalog_tag, basename=self._sink_catalog_basename, **kwargs,
+        )
+
+    def get_script_path(self, pipeline_name: str, sink_dir: str, **kwargs: Any) -> str:
+        selection = kwargs['selection']
+        flavor = kwargs['flavor']
+        return os.path.join(
+            sink_dir,
+            f"submit_{pipeline_name}_{selection}_{flavor}.sh"
+        )
+
+    def get_convert_commands(self, sink_dir: str) -> list[list[str]]:
+        raise NotImplementedError()
+
+
+class TruthToObservedPipelineCatalogConfiguration(PipelineCatalogConfiguration):
+
+    def get_convert_commands(self, sink_dir: str) -> list[list[str]]:
+        convert_command = [
+            "tables-io",
+            "convert",
+            "--input",
+            f"{sink_dir}/output_dereddener_errors.pq",
+            "--output",
+            f"{sink_dir}/output.hdf5",
+        ]
+        convert_commands = [convert_command]
+        return convert_commands
+
+
+class SpectroscopicPipelineCatalogConfiguration(PipelineCatalogConfiguration):
+
+    def get_convert_commands(self, sink_dir: str) -> list[list[str]]:
+        convert_commands = []
+        spec_selections = self._project.get_spec_selections()
+        for spec_selection_ in spec_selections.keys():
+            convert_command = [
+                "tables-io",
+                "convert",
+                "--input",
+                f"{sink_dir}/output_select_{spec_selection_}.pq",
+                "--output",
+                f"{sink_dir}/output_select_{spec_selection_}.hdf5",
+            ]
+            convert_commands.append(convert_command)
+        return convert_commands
+
+
+class BlendingPipelineCatalogConfiguration(PipelineCatalogConfiguration):
+
+    def get_convert_commands(self, sink_dir: str) -> list[list[str]]:
+        convert_command = [
+            "tables-io",
+            "convert",
+            "--input",
+            f"{sink_dir}/output_blended.pq",
+            "--output",
+            f"{sink_dir}/output_blended.hdf5",
+        ]
+        convert_commands = [convert_command]
+        return convert_commands
+
+
+def run_pipeline_on_catalog(
+    project: RailProject,
+    pipeline_name: str,
+    pipeline_catalog_configuration: PipelineCatalogConfiguration,
+    run_mode: RunMode==RunMode.bash,
+    **kwargs: Any,
+) -> int:
+    """ Run a pipeline on an entire catalog
+
+    Parameters
+    ----------
+    project: RailProject
+        Object with project configuration
+
+    pipeline_name: str
+        Name of the pipeline to run
+
+    pipeline_catalog_configuration: PipelineCatalogConfiguration
+        Class to manage input and output catalogs and files
+
+    run_mode: RunMode
+        How to run the command, e.g., dry_run, bash or slurm
+
+    kwargs: Any
+        Additional parameters to specify pipeline, e.g., flavor, selection, ...
+
+
+    Returns
+    -------
+    returncode: int
+        Status returned by the command.  0 for success, exit code otherwise
+    """
+
     pipeline_info = project.get_pipeline(pipeline_name)
-    pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, flavor=flavor)
+    pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, **kwargs)
 
     input_catalog_name = pipeline_info['InputCatalogTag']
     input_catalog = project.get_catalogs().get(input_catalog_name)
@@ -112,15 +278,11 @@ def truth_to_observed_pipeline(
                 for i in range(len(iteration_vars))
             }
 
-            source_catalog = project.get_catalog('reduced', selection=selection, **iteration_kwargs)
-            sink_catalog = project.get_catalog(
-                'degraded',
-                selection=selection,
-                flavor=flavor,
-                **iteration_kwargs,
-            )
+            source_catalog = pipeline_catalog_configuration.get_source_catalog(**kwargs,  **iteration_kwargs)
+            sink_catalog = pipeline_catalog_configuration.get_sink_catalog(**kwargs, **iteration_kwargs)
             sink_dir = os.path.dirname(sink_catalog)
-            script_path = os.path.join(sink_dir, f"submit_{pipeline_name}_{selection}_{flavor}.sh")
+            script_path = pipeline_catalog_configuration.get_script_path(pipeline_name, sink_dir, **kwargs, **iteration_kwargs)
+            convert_commands = pipeline_catalog_configuration.get_convert_commands(sink_dir)
 
             ceci_command = project.generate_ceci_command(
                 pipeline_path=pipeline_path,
@@ -130,100 +292,6 @@ def truth_to_observed_pipeline(
                 log_dir=sink_dir,
             )
 
-            if not os.path.isfile(source_catalog):
-                raise ValueError(f"Input file {source_catalog} not found")
-            try:
-                handle_commands(
-                    run_mode,
-                    [
-                        ["mkdir", "-p", f"{sink_dir}"],
-                        ceci_command,
-                        [
-                            "tables-io",
-                            "convert",
-                            "--input",
-                            f"{sink_dir}/output_dereddener_errors.pq",
-                            "--output",
-                            f"{sink_dir}/output.hdf5",
-                        ]
-                    ],
-                    script_path,
-                )
-            except Exception as msg:
-                print(msg)
-                return 1
-        return 0
-
-    # FIXME need to get catalogs even if iteration not specified; this return fallback isn't ideal
-    return 1
-
-
-def spectroscopic_selection_pipeline(
-    project,
-    selection,
-    flavor,
-    run_mode=RunMode.bash,
-):
-    pipeline_name = "spec_selection"
-    pipeline_info = project.get_pipeline(pipeline_name)
-    pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, flavor=flavor)
-
-    input_catalog_name = pipeline_info['InputCatalogTag']
-    input_catalog = project.get_catalogs().get(input_catalog_name)
-
-    spec_selections = project.get_spec_selections()
-    
-    # Loop through all possible combinations of the iteration variables that are
-    # relevant to this pipeline
-    if (iteration_vars := input_catalog.get("IterationVars")) is not None:
-        iterations = itertools.product(
-            *[
-                project.config.get("IterationVars").get(iteration_var)
-                for iteration_var in iteration_vars
-            ]
-        )
-        for iteration_args in iterations:
-            iteration_kwargs = {
-                iteration_vars[i]: iteration_args[i]
-                for i in range(len(iteration_vars))
-            }
-
-            source_catalog = project.get_catalog(
-                input_catalog_name,
-                selection=selection,
-                flavor=flavor,
-                basename="output_dereddener_errors.pq",
-                **iteration_kwargs,
-            )
-            sink_catalog = project.get_catalog(
-                'degraded',
-                selection=selection,
-                flavor=flavor,
-                **iteration_kwargs,
-            )
-            sink_dir = os.path.dirname(sink_catalog)
-            script_path = os.path.join(sink_dir, f"submit_{pipeline_name}_{selection}_{flavor}.sh")
-
-            ceci_command = project.generate_ceci_command(
-                pipeline_path=pipeline_path,
-                config=pipeline_path.replace('.yaml', '_config.yml'),
-                inputs=dict(input=source_catalog),
-                output_dir=sink_dir,
-                log_dir=sink_dir,
-            )
-
-            convert_commands = []
-            for spec_selection_ in spec_selections.keys():
-                convert_command = [
-                    "tables-io",
-                    "convert",
-                    "--input",
-                    f"{sink_dir}/output_select_{spec_selection_}.pq",
-                    "--output",
-                    f"{sink_dir}/output_select_{spec_selection_}.hdf5",
-                ]
-                convert_commands.append(convert_command)
-                
             if not os.path.isfile(source_catalog):
                 raise ValueError(f"Input file {source_catalog} not found")
             try:
@@ -245,106 +313,44 @@ def spectroscopic_selection_pipeline(
     return 1
 
 
-def blending_pipeline(
-    project,
-    selection,
-    flavor,
-    run_mode=RunMode.bash,
-):
-    pipeline_name = "blending"
-    pipeline_info = project.get_pipeline(pipeline_name)
-    pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, flavor=flavor)
+def run_pipeline_on_single_input(
+    project: RailProject,
+    pipeline_name: str,
+    input_callback: Callable,
+    run_mode: RunMode=RunMode.bash,
+    **kwargs: Any,
+) -> int:
+    """ Run a single pipeline
 
-    input_catalog_name = pipeline_info['InputCatalogTag']
-    input_catalog = project.get_catalogs().get(input_catalog_name)
-   
-    # Loop through all possible combinations of the iteration variables that are
-    # relevant to this pipeline
-    if (iteration_vars := input_catalog.get("IterationVars")) is not None:
-        iterations = itertools.product(
-            *[
-                project.config.get("IterationVars").get(iteration_var)
-                for iteration_var in iteration_vars
-            ]
-        )
-        for iteration_args in iterations:
-            iteration_kwargs = {
-                iteration_vars[i]: iteration_args[i]
-                for i in range(len(iteration_vars))
-            }
+    Parameters
+    ----------
+    project: RailProject
+        Object with project configuration
 
-            source_catalog = project.get_catalog(
-                input_catalog_name,
-                selection=selection,
-                flavor=flavor,
-                **iteration_kwargs,
-            )
-            sink_catalog = project.get_catalog(
-                'degraded',
-                selection=selection,
-                flavor=flavor,
-                **iteration_kwargs,
-            )
-            sink_dir = os.path.dirname(sink_catalog)
-            script_path = os.path.join(sink_dir, f"submit_{pipeline_name}_{selection}_{flavor}.sh")
+    pipeline_name: str
+        Name of the pipeline to run
 
-            ceci_command = project.generate_ceci_command(
-                pipeline_path=pipeline_path,
-                config=pipeline_path.replace('.yaml', '_config.yml'),
-                inputs=dict(input=source_catalog),
-                output_dir=sink_dir,
-                log_dir=sink_dir,
-            )
+    input_callback: Callable
+        Function that creates dict of input files
 
-            convert_command = [
-                "tables-io",
-                "convert",
-                "--input",
-                f"{sink_dir}/output_blended.pq",
-                "--output",
-                f"{sink_dir}/output_blended.hdf5",
-            ]
-                
-            if not os.path.isfile(source_catalog):
-                raise ValueError(f"Input file {source_catalog} not found")
-            try:
-                handle_commands(
-                    run_mode,
-                    [
-                        ["mkdir", "-p", f"{sink_dir}"],
-                        ceci_command,
-                        *[convert_command],
-                    ],
-                    script_path,
-                )
-            except Exception as msg:
-                print(msg)
-                return 1
-        return 0
+    run_mode: RunMode
+        How to run the command, e.g., dry_run, bash or slurm
 
-    # FIXME need to get catalogs even if iteration not specified; this return fallback isn't ideal
-    return 1
+    kwargs: Any
+        Additional parameters to specify pipeline, e.g., flavor, selection, ...
 
 
-def inform_pipeline(
-    project,
-    selection="gold",
-    flavor="baseline",
-    run_mode=RunMode.bash,
-):
-
-    pipeline_name = "inform"
-    pipeline_info = project.get_pipeline(pipeline_name)
-    pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, flavor=flavor)
-    pipeline_config = pipeline_path.replace('.yaml', '_config.yml')
-    sink_dir = project.get_path('ceci_output_dir', selection=selection, flavor=flavor)
+    Returns
+    -------
+    returncode: int
+        Status returned by the command.  0 for success, exit code otherwise
+    """
+    pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, **kwargs)
+    pipeline_config = pipeline_path.replace('.yaml', '_config.yaml')
+    sink_dir = project.get_path('ceci_output_dir', **kwargs)
     script_path = os.path.join(sink_dir, f"submit_{pipeline_name}.sh")
 
-    input_files = {}
-    input_file_tags = pipeline_info['InputFileTags']
-    for key, val in input_file_tags.items():
-        input_file_flavor = val.get('flavor', 'baseline')
-        input_files[key] = project.get_file_for_flavor(input_file_flavor, val['tag'], selection=selection)
+    input_files = input_callback(project, pipeline_name, sink_dir, **kwargs)
 
     command_line = project.generate_ceci_command(
         pipeline_path=pipeline_path,
@@ -355,142 +361,202 @@ def inform_pipeline(
     )
 
     try:
-        handle_commands(run_mode, [command_line], script_path)
+        statuscode = handle_commands(run_mode, [command_line], script_path)
     except Exception as msg:
         print(msg)
-        return 1
-    return 0
+        statuscode = 1
+    return statuscode
 
 
-def estimate_single(
-    project,
-    selection="gold",
-    flavor="baseline",
-    run_mode=RunMode.bash,
-):
+def inform_input_callback(
+    project: RailProject,
+    pipeline_name: str,
+    sink_dir: str | None,
+    **kwargs: Any,
+) -> dict[str, str]:
+    """Make dict of input tags and paths for the inform pipeline
 
-    pipeline_name = "estimate"
+    Parameters
+    ----------
+    project: RailProject
+        Object with project configuration
+
+    pipeline_name: str
+        Name of the pipeline to run
+
+    sink_dir: str | None
+        Path to output directory
+
+    kwargs: Any
+        Additional parameters to specify pipeline, e.g., flavor, selection, ...
+
+    Returns
+    -------
+    input_files: dict[str, str]
+        Dictionary of input file tags and paths
+    """
     pipeline_info = project.get_pipeline(pipeline_name)
-    pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, flavor=flavor)
-    pipeline_config = pipeline_path.replace('.yaml', '_config.yml')
-    sink_dir = project.get_path('ceci_output_dir', selection=selection, flavor=flavor)
-    script_path = os.path.join(sink_dir, f"submit_{pipeline_name}.sh")
-
     input_files = {}
     input_file_tags = pipeline_info['InputFileTags']
+    flavor = kwargs.pop('flavor', 'baseline')
     for key, val in input_file_tags.items():
-        input_file_flavor = val.get('flavor', 'baseline')
-        input_files[key] = project.get_file_for_flavor(input_file_flavor, val['tag'], selection=selection)
+        input_file_flavor = val.get('flavor', flavor)
+        input_files[key] = project.get_file_for_flavor(input_file_flavor, val['tag'], **kwargs)
+    return input_files
+
+
+def estimate_input_callback(
+    project: RailProject,
+    pipeline_name: str,
+    sink_dir: str | None,
+    **kwargs: Any,
+) -> dict[str, str]:
+    """Make dict of input tags and paths for the estimate pipeline
+
+    Parameters
+    ----------
+    project: RailProject
+        Object with project configuration
+
+    pipeline_name: str
+        Name of the pipeline to run
+
+    sink_dir: str | None
+        Path to output directory
+
+    kwargs: Any
+        Additional parameters to specify pipeline, e.g., flavor, selection, ...
+
+    Returns
+    -------
+    input_files: dict[str, str]
+        Dictionary of input file tags and paths
+    """
+    pipeline_info = project.get_pipeline(pipeline_name)
+    input_files = {}
+    input_file_tags = pipeline_info['InputFileTags']
+    flavor = kwargs.pop('flavor', 'baseline')
+    for key, val in input_file_tags.items():
+        input_file_flavor = val.get('flavor', flavor)
+        input_files[key] = project.get_file_for_flavor(input_file_flavor, val['tag'], **kwargs)
 
     pz_algorithms = project.get_pzalgorithms()
     for pz_algo_ in pz_algorithms.keys():
         input_files[f"model_{pz_algo_}"] = os.path.join(sink_dir, f'inform_model_{pz_algo_}.pkl')
-
-    command_line = project.generate_ceci_command(
-        pipeline_path=pipeline_path,
-        config=pipeline_config,
-        inputs=input_files,
-        output_dir=sink_dir,
-        log_dir=f"{sink_dir}/logs",
-    )
-
-    try:
-        handle_commands(run_mode, [command_line], script_path)
-    except Exception as msg:
-        print(msg)
-        return 1
-    return 0
+    return input_files
 
 
-def evaluate_single(
-    project,
-    selection="gold",
-    flavor="baseline",
-    run_mode=RunMode.bash,
-):
-    pipeline_name = "evaluate"
+def evaluate_input_callback(
+    project: RailProject,
+    pipeline_name: str,
+    sink_dir: str | None,
+    **kwargs: Any,
+) -> dict[str, str]:
+    """Make dict of input tags and paths for the evalute pipeline
+
+    Parameters
+    ----------
+    project: RailProject
+        Object with project configuration
+
+    pipeline_name: str
+        Name of the pipeline to run
+
+    sink_dir: str | None
+        Path to output directory
+
+    kwargs: Any
+        Additional parameters to specify pipeline, e.g., flavor, selection, ...
+
+    Returns
+    -------
+    input_files: dict[str, str]
+        Dictionary of input file tags and paths
+    """
     pipeline_info = project.get_pipeline(pipeline_name)
-    pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, flavor=flavor)
-    pipeline_config = pipeline_path.replace('.yaml', '_config.yml')
-    sink_dir = project.get_path('ceci_output_dir', selection=selection, flavor=flavor)
-    script_path = os.path.join(sink_dir, f"submit_{pipeline_name}.sh")
-
     input_files = {}
     input_file_tags = pipeline_info['InputFileTags']
+    flavor = kwargs.pop('flavor', 'baseline')
     for key, val in input_file_tags.items():
-        input_file_flavor = val.get('flavor', 'baseline')
-        input_files[key] = project.get_file_for_flavor(input_file_flavor, val['tag'], selection=selection)
+        input_file_flavor = val.get('flavor', flavor)
+        input_files[key] = project.get_file_for_flavor(input_file_flavor, val['tag'], **kwargs)
 
     pdfs_dir = sink_dir
     pz_algorithms = project.get_pzalgorithms()
     for pz_algo_ in pz_algorithms.keys():
         input_files[f"input_evaluate_{pz_algo_}"] = os.path.join(pdfs_dir, f'estimate_output_{pz_algo_}.hdf5')
+    return input_files
 
 
-    command_line = project.generate_ceci_command(
-        pipeline_path=pipeline_path,
-        config=pipeline_config,
-        inputs=input_files,
-        output_dir=sink_dir,
-        log_dir=f"{sink_dir}/logs",
-    )
-    try:
-        handle_commands(run_mode, [command_line], script_path)
-    except Exception as msg:
-        print(msg)
-        return 1
-    return 0
+def pz_input_callback(
+    project: RailProject,
+    pipeline_name: str,
+    sink_dir: str | None,
+    **kwargs: Any,
+) -> dict[str, str]:
+    """Make dict of input tags and paths for the pz pipeline
 
+    Parameters
+    ----------
+    project: RailProject
+        Object with project configuration
 
-def pz_single(
-    project,
-    selection="gold",
-    flavor="baseline",
-    run_mode=RunMode.bash,
-):
-    pipeline_name = "pz"
+    pipeline_name: str
+        Name of the pipeline to run
+
+    sink_dir: str | None
+        Path to output directory
+
+    kwargs: Any
+        Additional parameters to specify pipeline, e.g., flavor, selection, ...
+
+    Returns
+    -------
+    input_files: dict[str, str]
+        Dictionary of input file tags and paths
+    """
     pipeline_info = project.get_pipeline(pipeline_name)
-    pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, flavor=flavor)
-    pipeline_config = pipeline_path.replace('.yaml', '_config.yml')
-    sink_dir = project.get_path('ceci_output_dir', selection=selection, flavor=flavor)
-    script_path = os.path.join(sink_dir, f"submit_{pipeline_name}.sh")
-
     input_files = {}
     input_file_tags = pipeline_info['InputFileTags']
+    flavor = kwargs.pop('flavor')
     for key, val in input_file_tags.items():
         input_file_flavor = val.get('flavor', flavor)
-        input_files[key] = project.get_file_for_flavor(input_file_flavor, val['tag'], selection=selection)
-
-    command_line = project.generate_ceci_command(
-        pipeline_path=pipeline_path,
-        config=pipeline_config,
-        inputs=input_files,
-        output_dir=sink_dir,
-        log_dir=f"{sink_dir}/logs",
-    )
-    try:
-        handle_commands(run_mode, [command_line], script_path)
-    except Exception as msg:
-        print(msg)
-        return 1
-    return 0
+        input_files[key] = project.get_file_for_flavor(input_file_flavor, val['tag'], **kwargs)
+    return input_files
 
 
-def tomography_single(
-    project,
-    selection="gold",
-    flavor="baseline",
-    run_mode=RunMode.bash,
-):
-    pipeline_name = "tomography"
+def tomography_input_callback(
+    project: RailProject,
+    pipeline_name: str,
+    sink_dir: str | None,
+    **kwargs: Any,
+) -> dict[str, str]:
+    """Make dict of input tags and paths for the tomography pipeline
+
+    Parameters
+    ----------
+    project: RailProject
+        Object with project configuration
+
+    pipeline_name: str
+        Name of the pipeline to run
+
+    sink_dir: str | None
+        Path to output directory
+
+    kwargs: Any
+        Additional parameters to specify pipeline, e.g., flavor, selection, ...
+
+    Returns
+    -------
+    input_files: dict[str, str]
+        Dictionary of input file tags and paths
+    """
     pipeline_info = project.get_pipeline(pipeline_name)
-    pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, flavor=flavor)
-    pipeline_config = pipeline_path.replace('.yaml', '_config.yml')
-    sink_dir = project.get_path('ceci_output_dir', selection=selection, flavor=flavor)
-    script_path = os.path.join(sink_dir, f"submit_{pipeline_name}.sh")
-
     input_files = {}
     input_file_tags = pipeline_info['InputFileTags']
+    flavor = kwargs.pop('flavor')
+    selection = kwargs.get('selection')
     for key, val in input_file_tags.items():
         input_file_flavor = val.get('flavor', flavor)
         input_files[key] = project.get_file_for_flavor(input_file_flavor, val['tag'], selection=selection)
@@ -500,36 +566,41 @@ def tomography_single(
     for pz_algo_ in pz_algorithms.keys():
         input_files[f"input_{pz_algo_}"] = os.path.join(pdfs_dir, f'output_estimate_{pz_algo_}.hdf5')
 
-    command_line = project.generate_ceci_command(
-        pipeline_path=pipeline_path,
-        config=pipeline_config,
-        inputs=input_files,
-        output_dir=sink_dir,
-        log_dir=f"{sink_dir}/logs",
-    )
-    try:
-        handle_commands(run_mode, [command_line], script_path)
-    except Exception as msg:
-        print(msg)
-        return 1
-    return 0
+    return input_files
 
 
-def sompz_single(
-    project,
-    selection="gold",
-    flavor="baseline",
-    run_mode=RunMode.bash,
-):
-    pipeline_name = "som_pz"
+def sompz_input_callback(
+    project: RailProject,
+    pipeline_name: str,
+    sink_dir: str | None,
+    **kwargs: Any,
+) -> dict[str, str]:
+    """Make dict of input tags and paths for the sompz pipeline
+
+    Parameters
+    ----------
+    project: RailProject
+        Object with project configuration
+
+    pipeline_name: str
+        Name of the pipeline to run
+
+    sink_dir: str | None
+        Path to output directory
+
+    kwargs: Any
+        Additional parameters to specify pipeline, e.g., flavor, selection, ...
+
+    Returns
+    -------
+    input_files: dict[str, str]
+        Dictionary of input file tags and paths
+    """
     pipeline_info = project.get_pipeline(pipeline_name)
-    pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, flavor=flavor)
-    pipeline_config = pipeline_path.replace('.yaml', '_config.yml')
-    sink_dir = project.get_path('ceci_output_dir', selection=selection, flavor=flavor)
-    script_path = os.path.join(sink_dir, f"submit_{pipeline_name}.sh")
-
     input_file_dict = {}
     input_file_tags = pipeline_info['InputFileTags']
+    flavor = kwargs.pop('flavor')
+    selection = kwargs.get('selection')
     for key, val in input_file_tags.items():
         input_file_flavor = val.get('flavor', flavor)
         input_file_dict[key] = project.get_file_for_flavor(input_file_flavor, val['tag'], selection=selection)
@@ -542,33 +613,44 @@ def sompz_single(
         test_wide_data = input_file_dict['input_test'],
         truth = input_file_dict['input_test'],
     )
-        
-    pdfs_dir = sink_dir
-
-    command_line = project.generate_ceci_command(
-        pipeline_path=pipeline_path,
-        config=pipeline_config,
-        inputs=input_files,
-        output_dir=sink_dir,
-        log_dir=f"{sink_dir}/logs",
-    )
-    try:
-        handle_commands(run_mode, [command_line], script_path)
-    except Exception as msg:
-        print(msg)
-        return 1
-    return 0
-
+    return input_files
 
 
 def subsample_data(
-    project,
-    source_tag="degraded",
-    selection="gold",
-    flavor="baseline",
-    label="train_file",
-    run_mode=RunMode.bash,
-):
+    project: RailProject,
+    source_tag: str="degraded",
+    selection: str="gold",
+    flavor: str="baseline",
+    label: str="train_file",
+    run_mode: RunMode=RunMode.bash,
+) -> int:
+    """Make dict of input tags and paths for the sompz pipeline
+
+    Parameters
+    ----------
+    project: RailProject
+        Object with project configuration
+
+    source_tag: str
+        Tag for the input catalog
+
+    selection: str
+        Which sub-selection of data to draw from
+
+    flavor: str
+        Which analysis flavor to draw from
+
+    label: str
+        Which label to apply to output dataset
+
+    run_mode: RunMode
+        How to run the command, e.g., dry_run, bash or slurm
+
+    Returns
+    -------
+    returncode: int
+        Status returned by the command.  0 for success, exit code otherwise
+    """
 
     hdf5_output = project.get_file_for_flavor(flavor, label, selection=selection)
     output = hdf5_output.replace('.hdf5', '.parquet')
@@ -611,7 +693,7 @@ def subsample_data(
     rng = np.random.default_rng(seed)
     print("sampling", size)
 
-    size = min(size, num_rows)    
+    size = min(size, num_rows)
     indices = rng.choice(num_rows, size=size, replace=False)
     subset = dataset.take(indices)
     print("writing", output)
@@ -628,7 +710,25 @@ def subsample_data(
 
 
 
-def build_pipelines(project, flavor='baseline'):
+def build_pipelines(
+    project: RailProject,
+    flavor: str='baseline',
+) -> int:
+    """Build ceci pipeline configuraiton files for this project
+
+    Parameters
+    ----------
+    project: RailProject
+        Object with project configuration
+
+    flavor: str
+        Which analysis flavor to draw from
+
+    Returns
+    -------
+    returncode: int
+        Status returned by the command.  0 for success, exit code otherwise
+    """
 
     output_dir = project.get_common_path('project_scratch_dir')
     flavor_dict = project.get_flavor(flavor)
@@ -669,7 +769,7 @@ def build_pipelines(project, flavor='baseline'):
                 pipeline_kwargs[key] = project.get_summarizers()
             elif val == 'ErrorModels':
                 pipeline_kwargs[key] = project.get_error_models()
-                
+
         if overrides:
             pipe_ctor_kwargs = overrides.pop('kwargs', {})
             pz_algorithms = pipe_ctor_kwargs.pop('PZAlgorithms', None)
@@ -677,7 +777,7 @@ def build_pipelines(project, flavor='baseline'):
                 orig_pz_algorithms = project.get_pzalgorithms().copy()
                 pipe_ctor_kwargs['algorithms'] = {
                     pz_algo_: orig_pz_algorithms[pz_algo_] for pz_algo_ in pz_algorithms
-                }            
+                }
             pipeline_kwargs.update(**pipe_ctor_kwargs)
             stages_config = os.path.join(pipe_out_dir, f"{pipeline_name}_{flavor}_overrides.yml")
             with open(stages_config, 'w') as fout:
