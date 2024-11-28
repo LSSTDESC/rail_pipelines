@@ -6,7 +6,7 @@ import os
 
 from rail.core.stage import RailStage, RailPipeline
 from rail.evaluation.single_evaluator import SingleEvaluator
-from rail.utils.project import PZ_ALGORITHMS
+from rail.utils.algo_library import PZ_ALGORITHMS
 
 
 shared_stage_opts = dict(
