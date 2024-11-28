@@ -139,6 +139,10 @@ def inspect(config_file: str) -> int:
 
 
 class PipelineCatalogConfiguration:
+    """Small plugin class to handle configuring a pipeline to run on a catalog
+
+    Sub-classes will have to implment "get_convert_commands" function
+    """
 
     def __init__(
         self,
@@ -155,16 +159,19 @@ class PipelineCatalogConfiguration:
         self._sink_catalog_basename = sink_catalog_basename
 
     def get_source_catalog(self, **kwargs: Any) -> str:
+        """Get the name of the source (i.e. input) catalog file"""
         return self._project.get_catalog(
             self._source_catalog_tag, basename=self._source_catalog_basename, **kwargs,
         )
 
     def get_sink_catalog(self, **kwargs: Any) -> str:
+        """Get the name of the sink (i.e., output) catalog file"""
         return self._project.get_catalog(
             self._sink_catalog_tag, basename=self._sink_catalog_basename, **kwargs,
         )
 
     def get_script_path(self, pipeline_name: str, sink_dir: str, **kwargs: Any) -> str:
+        """Get path to use for the slurm batch submit script"""
         selection = kwargs['selection']
         flavor = kwargs['flavor']
         return os.path.join(
@@ -173,6 +180,9 @@ class PipelineCatalogConfiguration:
         )
 
     def get_convert_commands(self, sink_dir: str) -> list[list[str]]:
+        """Get the set of commands to run after the pipeline to
+        convert output files
+        """
         raise NotImplementedError()
 
 
