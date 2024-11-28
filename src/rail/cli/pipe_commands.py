@@ -162,6 +162,7 @@ def subsample_data(config_file, **kwargs):
 @pipe_options.run_mode()
 def inform(config_file, **kwargs):
     """Run the inform pipeline"""
+    pipeline_name = "inform"
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
     selections = project.get_selection_args(kwargs.pop('selection'))
@@ -169,7 +170,7 @@ def inform(config_file, **kwargs):
     ok = 0
     for kw in iter_kwargs:
         ok |= pipe_scripts.run_pipeline_on_single_input(
-            project, "inform",
+            project, pipeline_name,
             pipe_scripts.inform_input_callback,
             **kw, **kwargs,
         )
@@ -183,6 +184,7 @@ def inform(config_file, **kwargs):
 @pipe_options.run_mode()
 def estimate_single(config_file, **kwargs):
     """Run the estimation pipeline"""
+    pipeline_name = "estimate"
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
     selections = project.get_selection_args(kwargs.pop('selection'))
@@ -190,7 +192,7 @@ def estimate_single(config_file, **kwargs):
     ok = 0
     for kw in iter_kwargs:
         ok |= pipe_scripts.run_pipeline_on_single_input(
-            project, "estimate",
+            project, pipeline_name,
             pipe_scripts.estimate_input_callback,
             **kw, **kwargs,
         )
@@ -204,6 +206,7 @@ def estimate_single(config_file, **kwargs):
 @pipe_options.run_mode()
 def evaluate_single(config_file, **kwargs):
     """Run the evaluation pipeline"""
+    pipeline_name = "evaluate"
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
     selections = project.get_selection_args(kwargs.pop('selection'))
@@ -211,7 +214,7 @@ def evaluate_single(config_file, **kwargs):
     ok = 0
     for kw in iter_kwargs:
         ok |= pipe_scripts.run_pipeline_on_single_input(
-            project, "evaluate",
+            project, pipeline_name,
             pipe_scripts.evaluate_input_callback,
             **kw, **kwargs,
         )
@@ -225,6 +228,7 @@ def evaluate_single(config_file, **kwargs):
 @pipe_options.run_mode()
 def pz_single(config_file, **kwargs):
     """Run the pz pipeline"""
+    pipeline_name = "pz"
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
     selections = project.get_selection_args(kwargs.pop('selection'))
@@ -232,7 +236,7 @@ def pz_single(config_file, **kwargs):
     ok = 0
     for kw in iter_kwargs:
         ok |= pipe_scripts.run_pipeline_on_single_input(
-            project, "pz",
+            project, pipeline_name,
             pipe_scripts.pz_input_callback,
             **kw, **kwargs,
         )
@@ -246,6 +250,7 @@ def pz_single(config_file, **kwargs):
 @pipe_options.run_mode()
 def tomography_single(config_file, **kwargs):
     """Run the tomography pipeline"""
+    pipeline_name = "tomography"
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
     selections = project.get_selection_args(kwargs.pop('selection'))
@@ -253,7 +258,7 @@ def tomography_single(config_file, **kwargs):
     ok = 0
     for kw in iter_kwargs:
         ok |= pipe_scripts.run_pipeline_on_single_input(
-            project, "tomography",
+            project, pipeline_name,
             pipe_scripts.tomography_input_callback,
             **kw, **kwargs,
         )
@@ -267,6 +272,7 @@ def tomography_single(config_file, **kwargs):
 @pipe_options.run_mode()
 def sompz_single(config_file, **kwargs):
     """Run the sompz pipeline"""
+    pipeline_name = "sompz"
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
     selections = project.get_selection_args(kwargs.pop('selection'))
@@ -274,7 +280,7 @@ def sompz_single(config_file, **kwargs):
     ok = 0
     for kw in iter_kwargs:
         ok |= pipe_scripts.run_pipeline_on_single_input(
-            project, "sompz",
+            project, pipeline_name,
             pipe_scripts.sompz_input_callback,
             **kw, **kwargs,
         )
