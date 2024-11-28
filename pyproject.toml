@@ -74,7 +74,9 @@ disable = [
     "use-dict-literal",
     "broad-exception-caught",
 ]
+generated-members = ["add", "multiply", "subtract", "divide", "sqrt", "floor", "atan2"]
 max-line-length = 110
 max-locals = 50
 max-branches = 25
 max-public-methods = 50
+max-args = 7
