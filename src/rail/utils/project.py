@@ -45,7 +45,7 @@ class RailProject:
             self.config.get("CommonPaths", {})
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.name}"
 
     @staticmethod

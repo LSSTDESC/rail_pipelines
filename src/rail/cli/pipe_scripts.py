@@ -110,10 +110,10 @@ def handle_commands(
         ) as sbatch:
             assert sbatch.stdout
             line = sbatch.stdout.read().decode().strip()
-            return int(line.split("|")[0])
+            ret_val = int(line.split("|")[0])
     except TypeError as msg:
         raise TypeError(f"Bad slurm submit: {msg}") from msg
-    return 0
+    return ret_val
 
 
 def inspect(config_file: str) -> int:

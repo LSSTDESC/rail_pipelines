@@ -14,7 +14,7 @@ class InformPipeline(RailPipeline):
 
     default_input_dict={'input':'dummy.in'}
 
-    def __init__(self, algorithms=None):
+    def __init__(self, algorithms: dict | None=None):
         RailPipeline.__init__(self)
 
         DS = RailStage.data_store

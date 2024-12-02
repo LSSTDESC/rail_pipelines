@@ -69,7 +69,7 @@ def _resolve_dict(source: dict, interpolants: dict) -> dict:
     sink : dict
         Dictionary of resolved templates
     """
-    if source is not None:
+    if source:
         sink = copy.deepcopy(source)
         for k, v in source.items():
             v_interpolated: list | dict | str = ""
@@ -85,7 +85,7 @@ def _resolve_dict(source: dict, interpolants: dict) -> dict:
 
             sink[k] = v_interpolated
     else:
-        sink = None
+        sink = {}
 
     return sink
 

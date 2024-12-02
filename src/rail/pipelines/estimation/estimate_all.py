@@ -18,7 +18,7 @@ class EstimatePipeline(RailPipeline):
 
     default_input_dict={'input':'dummy.in'}
 
-    def __init__(self, algorithms=None, models_dir='.'):
+    def __init__(self, algorithms: dict|None=None, models_dir: str='.'):
 
         RailPipeline.__init__(self)
 

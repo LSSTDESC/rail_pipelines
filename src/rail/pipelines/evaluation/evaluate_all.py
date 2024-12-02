@@ -23,7 +23,7 @@ class EvaluationPipeline(RailPipeline):
 
     default_input_dict=dict(truth='dummy.in')
 
-    def __init__(self, algorithms=None, pdfs_dir='.'):
+    def __init__(self, algorithms:dict | None = None, pdfs_dir: str='.') -> None:
         RailPipeline.__init__(self)
 
         DS = RailStage.data_store
