@@ -9,7 +9,7 @@ from rail.cli.options import (
 )
 
 
-__all__ = [
+__all__: list[str] = [
     "RunMode",
     "config_path",
     "flavor",

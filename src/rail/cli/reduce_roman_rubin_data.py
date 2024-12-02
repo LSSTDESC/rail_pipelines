@@ -8,6 +8,7 @@ import pyarrow.parquet as pq
 from pyarrow import acero
 
 from rail.cli.pipe_options import RunMode
+from rail.utils.project import RailProject
 
 
 COLUMNS = [
@@ -106,11 +107,11 @@ def reduce_roman_rubin_data(
 
 
     # FIXME
-    iteration_vars = list(project.config.get("IterationVars").keys())
+    iteration_vars = list(project.config.get("IterationVars", {}).keys())
     if iteration_vars is not None:
         iterations = itertools.product(
             *[
-                project.config.get("IterationVars").get(iteration_var)
+                project.config.get("IterationVars", {}).get(iteration_var, "")
                 for iteration_var in iteration_vars
             ]
         )

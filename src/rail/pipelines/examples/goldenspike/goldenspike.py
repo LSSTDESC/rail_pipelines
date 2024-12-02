@@ -30,7 +30,7 @@ class GoldenspikePipeline(RailPipeline):
         model=flow_file,
     )
 
-    def __init__(self):
+    def __init__(self) -> None:
         RailPipeline.__init__(self)
 
         DS = RailStage.data_store

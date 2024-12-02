@@ -65,6 +65,7 @@ disable = [
     "abstract-method",
     "invalid-name",
     "too-many-statements",
+    "too-many-instance-attributes",
     "missing-module-docstring",
     "missing-class-docstring",
     "missing-function-docstring",
@@ -73,7 +74,23 @@ disable = [
     "use-dict-literal",
     "broad-exception-caught",
 ]
+generated-members = ["add", "multiply", "subtract", "divide", "sqrt", "floor", "atan2"]
 max-line-length = 110
 max-locals = 50
 max-branches = 25
 max-public-methods = 50
+max-args = 7
+
+
+[tool.mypy]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+ignore_missing_imports = true
+local_partial_types = true
+no_implicit_reexport = true
+show_error_codes = true
+strict_equality = true
+warn_redundant_casts = true
+warn_unreachable = true
+warn_unused_ignores = true
+

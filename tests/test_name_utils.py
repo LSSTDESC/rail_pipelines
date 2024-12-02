@@ -17,7 +17,7 @@ def test_name_utils():
 
     name_utils._resolve_dict(test_dict, dict(alice='x', bob='y'))
 
-    assert name_utils._resolve_dict(None, {}) is None
+    assert not name_utils._resolve_dict(None, {})
     with pytest.raises(ValueError):
         name_utils._resolve_dict(dict(a=('s','d',)), dict(alice='x', bob='y'))
 

@@ -6,7 +6,7 @@ import os
 
 from rail.core.stage import RailStage, RailPipeline
 from rail.evaluation.single_evaluator import SingleEvaluator
-from rail.utils.project import PZ_ALGORITHMS
+from rail.utils.algo_library import PZ_ALGORITHMS
 
 
 shared_stage_opts = dict(
@@ -23,7 +23,7 @@ class EvaluationPipeline(RailPipeline):
 
     default_input_dict=dict(truth='dummy.in')
 
-    def __init__(self, algorithms=None, pdfs_dir='.'):
+    def __init__(self, algorithms:dict | None = None, pdfs_dir: str='.') -> None:
         RailPipeline.__init__(self)
 
         DS = RailStage.data_store

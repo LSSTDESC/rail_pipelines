@@ -41,10 +41,10 @@ def handle_command(
     if run_mode == RunMode.dry_run:
         # print(command_line)
         command_line.insert(0, "echo")
-        finished = subprocess.run(command_line)
+        finished = subprocess.run(command_line, check=False)
     elif run_mode == RunMode.bash:
         # return os.system(command_line)
-        finished = subprocess.run(command_line)
+        finished = subprocess.run(command_line, check=False)
     elif run_mode == RunMode.slurm:
         raise RuntimeError("handle_command should not be called with run_mode == RunMode.slurm")
 
@@ -94,9 +94,9 @@ def handle_commands(
 
     try:
         os.makedirs(os.path.dirname(script_path))
-    except:
+    except FileExistsError:
         pass
-    with open(script_path, 'w') as fout:
+    with open(script_path, 'w', encoding='utf-8') as fout:
         fout.write("#!/usr/bin/bash\n\n")
         for command_ in command_lines:
             com_line = ' '.join(command_)
@@ -110,10 +110,10 @@ def handle_commands(
         ) as sbatch:
             assert sbatch.stdout
             line = sbatch.stdout.read().decode().strip()
-            return line.split("|")[0]
+            ret_val = int(line.split("|")[0])
     except TypeError as msg:
         raise TypeError(f"Bad slurm submit: {msg}") from msg
-    return 0
+    return ret_val
 
 
 def inspect(config_file: str) -> int:
@@ -139,6 +139,10 @@ def inspect(config_file: str) -> int:
 
 
 class PipelineCatalogConfiguration:
+    """Small plugin class to handle configuring a pipeline to run on a catalog
+
+    Sub-classes will have to implment "get_convert_commands" function
+    """
 
     def __init__(
         self,
@@ -155,16 +159,19 @@ class PipelineCatalogConfiguration:
         self._sink_catalog_basename = sink_catalog_basename
 
     def get_source_catalog(self, **kwargs: Any) -> str:
+        """Get the name of the source (i.e. input) catalog file"""
         return self._project.get_catalog(
             self._source_catalog_tag, basename=self._source_catalog_basename, **kwargs,
         )
 
     def get_sink_catalog(self, **kwargs: Any) -> str:
+        """Get the name of the sink (i.e., output) catalog file"""
         return self._project.get_catalog(
             self._sink_catalog_tag, basename=self._sink_catalog_basename, **kwargs,
         )
 
     def get_script_path(self, pipeline_name: str, sink_dir: str, **kwargs: Any) -> str:
+        """Get path to use for the slurm batch submit script"""
         selection = kwargs['selection']
         flavor = kwargs['flavor']
         return os.path.join(
@@ -173,6 +180,9 @@ class PipelineCatalogConfiguration:
         )
 
     def get_convert_commands(self, sink_dir: str) -> list[list[str]]:
+        """Get the set of commands to run after the pipeline to
+        convert output files
+        """
         raise NotImplementedError()
 
 
@@ -228,7 +238,7 @@ def run_pipeline_on_catalog(
     project: RailProject,
     pipeline_name: str,
     pipeline_catalog_configuration: PipelineCatalogConfiguration,
-    run_mode: RunMode==RunMode.bash,
+    run_mode: RunMode=RunMode.bash,
     **kwargs: Any,
 ) -> int:
     """ Run a pipeline on an entire catalog
@@ -261,14 +271,14 @@ def run_pipeline_on_catalog(
     pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, **kwargs)
 
     input_catalog_name = pipeline_info['InputCatalogTag']
-    input_catalog = project.get_catalogs().get(input_catalog_name)
+    input_catalog = project.get_catalogs().get(input_catalog_name, {})
 
     # Loop through all possible combinations of the iteration variables that are
     # relevant to this pipeline
-    if (iteration_vars := input_catalog.get("IterationVars")) is not None:
+    if (iteration_vars := input_catalog.get("IterationVars", {})) is not None:
         iterations = itertools.product(
             *[
-                project.config.get("IterationVars").get(iteration_var)
+                project.config.get("IterationVars", {}).get(iteration_var, "")
                 for iteration_var in iteration_vars
             ]
         )
@@ -281,7 +291,11 @@ def run_pipeline_on_catalog(
             source_catalog = pipeline_catalog_configuration.get_source_catalog(**kwargs,  **iteration_kwargs)
             sink_catalog = pipeline_catalog_configuration.get_sink_catalog(**kwargs, **iteration_kwargs)
             sink_dir = os.path.dirname(sink_catalog)
-            script_path = pipeline_catalog_configuration.get_script_path(pipeline_name, sink_dir, **kwargs, **iteration_kwargs)
+            script_path = pipeline_catalog_configuration.get_script_path(
+                pipeline_name,
+                sink_dir,
+                **kwargs, **iteration_kwargs,
+            )
             convert_commands = pipeline_catalog_configuration.get_convert_commands(sink_dir)
 
             ceci_command = project.generate_ceci_command(
@@ -371,7 +385,7 @@ def run_pipeline_on_single_input(
 def inform_input_callback(
     project: RailProject,
     pipeline_name: str,
-    sink_dir: str | None,
+    sink_dir: str,  # pylint: disable=unused-argument
     **kwargs: Any,
 ) -> dict[str, str]:
     """Make dict of input tags and paths for the inform pipeline
@@ -384,7 +398,7 @@ def inform_input_callback(
     pipeline_name: str
         Name of the pipeline to run
 
-    sink_dir: str | None
+    sink_dir: str
         Path to output directory
 
     kwargs: Any
@@ -408,7 +422,7 @@ def inform_input_callback(
 def estimate_input_callback(
     project: RailProject,
     pipeline_name: str,
-    sink_dir: str | None,
+    sink_dir: str,
     **kwargs: Any,
 ) -> dict[str, str]:
     """Make dict of input tags and paths for the estimate pipeline
@@ -421,7 +435,7 @@ def estimate_input_callback(
     pipeline_name: str
         Name of the pipeline to run
 
-    sink_dir: str | None
+    sink_dir: str
         Path to output directory
 
     kwargs: Any
@@ -449,7 +463,7 @@ def estimate_input_callback(
 def evaluate_input_callback(
     project: RailProject,
     pipeline_name: str,
-    sink_dir: str | None,
+    sink_dir: str,
     **kwargs: Any,
 ) -> dict[str, str]:
     """Make dict of input tags and paths for the evalute pipeline
@@ -462,7 +476,7 @@ def evaluate_input_callback(
     pipeline_name: str
         Name of the pipeline to run
 
-    sink_dir: str | None
+    sink_dir: str
         Path to output directory
 
     kwargs: Any
@@ -491,7 +505,7 @@ def evaluate_input_callback(
 def pz_input_callback(
     project: RailProject,
     pipeline_name: str,
-    sink_dir: str | None,
+    sink_dir: str,  # pylint: disable=unused-argument
     **kwargs: Any,
 ) -> dict[str, str]:
     """Make dict of input tags and paths for the pz pipeline
@@ -504,7 +518,7 @@ def pz_input_callback(
     pipeline_name: str
         Name of the pipeline to run
 
-    sink_dir: str | None
+    sink_dir: str
         Path to output directory
 
     kwargs: Any
@@ -528,7 +542,7 @@ def pz_input_callback(
 def tomography_input_callback(
     project: RailProject,
     pipeline_name: str,
-    sink_dir: str | None,
+    sink_dir: str,
     **kwargs: Any,
 ) -> dict[str, str]:
     """Make dict of input tags and paths for the tomography pipeline
@@ -541,7 +555,7 @@ def tomography_input_callback(
     pipeline_name: str
         Name of the pipeline to run
 
-    sink_dir: str | None
+    sink_dir: str
         Path to output directory
 
     kwargs: Any
@@ -572,7 +586,7 @@ def tomography_input_callback(
 def sompz_input_callback(
     project: RailProject,
     pipeline_name: str,
-    sink_dir: str | None,
+    sink_dir: str,  # pylint: disable=unused-argument
     **kwargs: Any,
 ) -> dict[str, str]:
     """Make dict of input tags and paths for the sompz pipeline
@@ -585,7 +599,7 @@ def sompz_input_callback(
     pipeline_name: str
         Name of the pipeline to run
 
-    sink_dir: str | None
+    sink_dir: str
         Path to output directory
 
     kwargs: Any
@@ -664,7 +678,7 @@ def subsample_data(
 
     iterations = itertools.product(
         *[
-            project.config.get("IterationVars").get(iteration_var)
+            project.config.get("IterationVars", {}).get(iteration_var, "")
             for iteration_var in iteration_vars
         ]
     )
@@ -749,7 +763,7 @@ def build_pipelines(
 
         try:
             os.makedirs(pipe_out_dir)
-        except:
+        except FileExistsError:
             pass
 
         overrides = pipeline_overrides.get('default', {})
@@ -780,7 +794,7 @@ def build_pipelines(
                 }
             pipeline_kwargs.update(**pipe_ctor_kwargs)
             stages_config = os.path.join(pipe_out_dir, f"{pipeline_name}_{flavor}_overrides.yml")
-            with open(stages_config, 'w') as fout:
+            with open(stages_config, 'w', encoding='utf-8') as fout:
                 yaml.dump(overrides, fout)
         else:
             stages_config = None

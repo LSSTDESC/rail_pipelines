@@ -8,7 +8,7 @@ import ceci
 
 # Various rail modules
 from rail.core.stage import RailStage, RailPipeline
-from rail.utils.project import PZ_ALGORITHMS
+from rail.utils.algo_library import PZ_ALGORITHMS
 
 
 input_file = 'rubin_dm_dc2_example.pq'
@@ -18,7 +18,7 @@ class EstimatePipeline(RailPipeline):
 
     default_input_dict={'input':'dummy.in'}
 
-    def __init__(self, algorithms=None, models_dir='.'):
+    def __init__(self, algorithms: dict|None=None, models_dir: str='.'):
 
         RailPipeline.__init__(self)
 

@@ -1,16 +1,17 @@
+from __future__ import annotations
+
 import copy
 from pathlib import Path
 import itertools
+from typing import Any
 
 import yaml
 
 from rail.utils import name_utils
 
-from .algo_library import PZ_ALGORITHMS, CLASSIFIERS, SUMMARIZERS, SPEC_SELECTIONS
-
 
 class RailProject:
-    config_template = {
+    config_template: dict[str, dict] = {
         "IterationVars": {},
         "CommonPaths": {},
         "PathTemplates": {},
@@ -27,7 +28,7 @@ class RailProject:
         "Summarizers": {},
     }
 
-    def __init__(self, name, config_dict):
+    def __init__(self, name: str, config_dict: dict):
         self.name = name
         self._config_dict = config_dict
         self.config = copy.deepcopy(self.config_template)
@@ -41,43 +42,43 @@ class RailProject:
             interpolants=self.config.get("CommonPaths", {}),
         )
         self.name_factory.resolve_from_config(
-            self.config.get("CommonPaths")
+            self.config.get("CommonPaths", {})
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.name}"
 
     @staticmethod
-    def load_config(config_file):
+    def load_config(config_file: str) -> RailProject:
         """ Create and return a RailProject from a yaml config file"""
         project_name = Path(config_file).stem
-        with open(config_file, "r") as fp:
+        with open(config_file, "r", encoding='utf-8') as fp:
             config_dict = yaml.safe_load(fp)
         project = RailProject(project_name, config_dict)
         # project.resolve_common()
         return project
 
-    def get_path_templates(self):
+    def get_path_templates(self) -> dict:
         """ Return the dictionary of templates used to construct paths """
         return self.name_factory.get_path_templates()
 
-    def get_path(self, path_key, **kwargs):
+    def get_path(self, path_key: str, **kwargs: Any) -> str:
         """ Resolve and return a path using the kwargs as interopolants """
         return self.name_factory.resolve_path_template(path_key, **kwargs)
 
-    def get_common_paths(self):
+    def get_common_paths(self) -> dict:
         """ Return the dictionary of common paths """
         return self.name_factory.get_common_paths()
 
-    def get_common_path(self, path_key, **kwargs):
+    def get_common_path(self, path_key: str, **kwargs: Any) -> str:
         """ Resolve and return a common path using the kwargs as interopolants """
         return self.name_factory.resolve_common_path(path_key, **kwargs)
 
-    def get_files(self):
+    def get_files(self) -> dict:
         """ Return the dictionary of specific files """
-        return self.config.get("Files")
+        return self.config.get("Files", {})
 
-    def get_file(self, name, **kwargs):
+    def get_file(self, name: str, **kwargs: Any) -> str:
         """ Resolve and return a file using the kwargs as interpolants """
         files = self.get_files()
         file_dict = files.get(name, None)
@@ -86,9 +87,9 @@ class RailProject:
         path = self.name_factory.resolve_path(file_dict, "PathTemplate", **kwargs)
         return path
 
-    def get_flavors(self):
+    def get_flavors(self) -> dict:
         """ Return the dictionary of analysis flavor variants """
-        flavors = self.config.get("Flavors")
+        flavors = self.config.get("Flavors", {})
         baseline = flavors.get("baseline", {})
         for k, v in flavors.items():
             if k != "baseline":
@@ -96,7 +97,7 @@ class RailProject:
 
         return flavors
 
-    def get_flavor(self, name):
+    def get_flavor(self, name: str) -> dict:
         """ Resolve the configuration for a particular analysis flavor variant """
         flavors = self.get_flavors()
         flavor = flavors.get(name, None)
@@ -104,7 +105,7 @@ class RailProject:
             raise KeyError(f"flavor '{name}' not found in {self}")
         return flavor
 
-    def get_file_for_flavor(self, flavor, label, **kwargs):
+    def get_file_for_flavor(self, flavor: str, label: str, **kwargs: Any) -> str:
         """ Resolve the file associated to a particular flavor and label
 
         E.g., flavor=baseline and label=train would give the baseline training file
@@ -116,7 +117,7 @@ class RailProject:
             raise KeyError(f"Label '{label}' not found in flavor '{flavor}'") from msg
         return self.get_file(file_alias, flavor=flavor, label=label, **kwargs)
 
-    def get_file_metadata_for_flavor(self, flavor, label):
+    def get_file_metadata_for_flavor(self, flavor: str, label: str) -> dict:
         """ Resolve the metadata associated to a particular flavor and label
 
         E.g., flavor=baseline and label=train would give the baseline training metadata
@@ -128,11 +129,11 @@ class RailProject:
             raise KeyError(f"Label '{label}' not found in flavor '{flavor}'") from msg
         return self.get_files()[file_alias]
 
-    def get_selections(self):
+    def get_selections(self) -> dict:
         """ Get the dictionary describing all the selections"""
-        return self.config.get("Selections")
+        return self.config.get("Selections", {})
 
-    def get_selection(self, name):
+    def get_selection(self, name: str) -> dict:
         """ Get a particular selection by name"""
         selections = self.get_selections()
         selection = selections.get(name, None)
@@ -140,11 +141,11 @@ class RailProject:
             raise KeyError(f"selection '{name}' not found in {self}")
         return selection
 
-    def get_error_models(self):
+    def get_error_models(self) -> dict:
         """ Get the dictionary describing all the photometric error model algorithms"""
-        return self.config.get("ErrorModels")
+        return self.config.get("ErrorModels", {})
 
-    def get_error_model(self, name):
+    def get_error_model(self, name: str) -> dict:
         """ Get the information about a particular photometric error model algorithms"""
         error_models = self.get_error_models()
         error_model = error_models.get(name, None)
@@ -152,11 +153,11 @@ class RailProject:
             raise KeyError(f"error_models '{name}' not found in {self}")
         return error_model
 
-    def get_pzalgorithms(self):
+    def get_pzalgorithms(self) -> dict:
         """ Get the dictionary describing all the PZ estimation algorithms"""
-        return self.config.get("PZAlgorithms")
+        return self.config.get("PZAlgorithms", {})
 
-    def get_pzalgorithm(self, name):
+    def get_pzalgorithm(self, name: str) -> dict:
         """ Get the information about a particular PZ estimation algorithm"""
         pzalgorithms = self.get_pzalgorithms()
         pzalgorithm = pzalgorithms.get(name, None)
@@ -164,11 +165,11 @@ class RailProject:
             raise KeyError(f"pz algorithm '{name}' not found in {self}")
         return pzalgorithm
 
-    def get_nzalgorithms(self):
+    def get_nzalgorithms(self) -> dict:
         """ Get the dictionary describing all the PZ estimation algorithms"""
-        return self.config.get("NZAlgorithms")
+        return self.config.get("NZAlgorithms", {})
 
-    def get_nzalgorithm(self, name):
+    def get_nzalgorithm(self, name: str) -> dict:
         """ Get the information about a particular NZ estimation algorithm"""
         nzalgorithms = self.get_nzalgorithms()
         nzalgorithm = nzalgorithms.get(name, None)
@@ -176,11 +177,11 @@ class RailProject:
             raise KeyError(f"nz algorithm '{name}' not found in {self}")
         return nzalgorithm
 
-    def get_spec_selections(self):
+    def get_spec_selections(self) -> dict:
         """ Get the dictionary describing all the spectroscopic selection algorithms"""
-        return self.config.get("SpecSelections")
+        return self.config.get("SpecSelections", {})
 
-    def get_spec_selection(self, name):
+    def get_spec_selection(self, name: str) -> dict:
         """ Get the information about a particular spectroscopic selection algorithm"""
         spec_selections = self.get_spec_selections()
         spec_selection = spec_selections.get(name, None)
@@ -188,11 +189,11 @@ class RailProject:
             raise KeyError(f"spectroscopic selection '{name}' not found in {self}")
         return spec_selection
 
-    def get_classifiers(self):
+    def get_classifiers(self) -> dict:
         """ Get the dictionary describing all the tomographic bin classification"""
-        return self.config.get("Classifiers")
+        return self.config.get("Classifiers", {})
 
-    def get_classifier(self, name):
+    def get_classifier(self, name: str) -> dict:
         """ Get the information about a particular tomographic bin classification"""
         classifiers = self.get_classifiers()
         classifier = classifiers.get(name, None)
@@ -200,11 +201,11 @@ class RailProject:
             raise KeyError(f"tomographic bin classifier '{name}' not found in {self}")
         return classifier
 
-    def get_summarizers(self):
+    def get_summarizers(self) -> dict:
         """ Get the dictionary describing all the NZ summarization algorithms"""
-        return self.config.get("Summarizers")
+        return self.config.get("Summarizers", {})
 
-    def get_summarizer(self, name):
+    def get_summarizer(self, name: str) -> dict:
         """ Get the information about a particular NZ summarization algorithms"""
         summarizers = self.get_summarizers()
         summarizer = summarizers.get(name, None)
@@ -212,11 +213,11 @@ class RailProject:
             raise KeyError(f"NZ summarizer '{name}' not found in {self}")
         return summarizer
 
-    def get_catalogs(self):
+    def get_catalogs(self) -> dict:
         """ Get the dictionary describing all the types of data catalogs"""
-        return self.config['Catalogs']
+        return self.config.get('Catalogs', {})
 
-    def get_catalog(self, catalog, **kwargs):
+    def get_catalog(self, catalog: str, **kwargs: Any) -> str:
         """ Resolve the path for a particular catalog file"""
         catalog_dict = self.config['Catalogs'].get(catalog, {})
         try:
@@ -225,11 +226,11 @@ class RailProject:
         except KeyError as msg:
             raise KeyError(f"PathTemplate not found in {catalog}") from msg
 
-    def get_pipelines(self):
+    def get_pipelines(self) -> dict:
         """ Get the dictionary describing all the types of ceci pipelines"""
-        return self.config.get("Pipelines")
+        return self.config.get("Pipelines", {})
 
-    def get_pipeline(self, name):
+    def get_pipeline(self, name: str) -> dict:
         """ Get the information about a particular ceci pipeline"""
         pipelines = self.get_pipelines()
         pipeline = pipelines.get(name, None)
@@ -237,7 +238,7 @@ class RailProject:
             raise KeyError(f"pipeline '{name}' not found in {self}")
         return pipeline
 
-    def get_flavor_args(self, flavors):
+    def get_flavor_args(self, flavors: list[str]) -> list[str]:
         """ Get the 'flavors' to iterate a particular command over
 
         Notes
@@ -250,7 +251,7 @@ class RailProject:
             return list(flavor_dict.keys())
         return flavors
 
-    def get_selection_args(self, selections):
+    def get_selection_args(self, selections: list[str]) -> list[str]:
         """ Get the 'selections' to iterate a particular command over
 
         Notes
@@ -263,11 +264,11 @@ class RailProject:
             return list(selection_dict.keys())
         return selections
 
-    def generate_kwargs_iterable(self, **iteration_dict):
+    def generate_kwargs_iterable(self, **iteration_dict: Any) -> list[dict]:
         iteration_vars = list(iteration_dict.keys())
         iterations = itertools.product(
             *[
-                iteration_dict.get(key) for key in iteration_vars
+                iteration_dict.get(key, []) for key in iteration_vars
             ]
         )
         iteration_kwarg_list = []
@@ -281,13 +282,13 @@ class RailProject:
 
     def generate_ceci_command(
         self,
-        pipeline_path,
-        config=None,
-        inputs=None,
-        output_dir='.',
-        log_dir='.',
-        **kwargs,
-    ):
+        pipeline_path: str,
+        config: str|None,
+        inputs: dict,
+        output_dir: str='.',
+        log_dir: str='.',
+        **kwargs: Any,
+    ) -> list[str]:
 
         if config is None:
             config = pipeline_path.replace('.yaml', '_config.yml')

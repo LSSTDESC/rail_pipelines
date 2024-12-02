@@ -1,3 +1,5 @@
+from typing import Any
+
 import click
 
 from rail.core import __version__
@@ -15,7 +17,7 @@ def pipe_cli() -> None:
 
 @pipe_cli.command(name="inspect")
 @pipe_options.config_file()
-def inspect(config_file):
+def inspect(config_file: str) -> int:
     """Inspect a rail pipeline project config"""
     return pipe_scripts.inspect(config_file)
 
@@ -23,7 +25,7 @@ def inspect(config_file):
 @pipe_cli.command()
 @pipe_options.config_file()
 @pipe_options.flavor()
-def build_pipelines(config_file, **kwargs):
+def build_pipelines(config_file: str, **kwargs: Any) -> int:
     """Build the ceci pipeline configuraiton files"""
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
@@ -40,7 +42,7 @@ def build_pipelines(config_file, **kwargs):
 @pipe_options.input_selection()
 @pipe_options.selection()
 @pipe_options.run_mode()
-def reduce_roman_rubin(config_file, **kwargs):
+def reduce_roman_rubin(config_file: str, **kwargs: Any) -> int:
     """Reduce the roman rubin simulations for PZ analysis"""
     project = RailProject.load_config(config_file)
     selections = project.get_selection_args(kwargs.pop('selection'))
@@ -58,7 +60,7 @@ def reduce_roman_rubin(config_file, **kwargs):
 @pipe_options.selection()
 @pipe_options.flavor()
 @pipe_options.run_mode()
-def truth_to_observed_pipeline(config_file, **kwargs):
+def truth_to_observed_pipeline(config_file: str, **kwargs: Any) -> int:
     """Run the truth-to-observed analysis pipeline"""
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
@@ -66,7 +68,7 @@ def truth_to_observed_pipeline(config_file, **kwargs):
     iter_kwargs = project.generate_kwargs_iterable(flavor=flavors, selection=selections)
     ok = 0
     pipeline_name = "truth_to_observed"
-   
+
     pipeline_catalog_config = pipe_scripts.TruthToObservedPipelineCatalogConfiguration(
         project, source_catalog_tag='reduced', sink_catalog_tag='degraded',
     )
@@ -84,7 +86,7 @@ def truth_to_observed_pipeline(config_file, **kwargs):
 @pipe_options.selection()
 @pipe_options.flavor()
 @pipe_options.run_mode()
-def spectroscopic_selection_pipeline(config_file, **kwargs):
+def spectroscopic_selection_pipeline(config_file: str, **kwargs: Any) -> int:
     """Run the spectroscopic selection analysis pipeline"""
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
@@ -116,7 +118,7 @@ def spectroscopic_selection_pipeline(config_file, **kwargs):
 @pipe_options.selection()
 @pipe_options.flavor()
 @pipe_options.run_mode()
-def blending_pipeline(config_file, **kwargs):
+def blending_pipeline(config_file: str, **kwargs: Any) -> int:
     """Run the blending analysis pipeline"""
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
@@ -147,7 +149,7 @@ def blending_pipeline(config_file, **kwargs):
 @pipe_options.selection()
 @pipe_options.label()
 @pipe_options.run_mode()
-def subsample_data(config_file, **kwargs):
+def subsample_data(config_file: str, **kwargs: Any) -> int:
     """Make a training data set by randomly selecting objects"""
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
@@ -164,7 +166,7 @@ def subsample_data(config_file, **kwargs):
 @pipe_options.flavor()
 @pipe_options.selection()
 @pipe_options.run_mode()
-def inform(config_file, **kwargs):
+def inform(config_file: str, **kwargs: Any) -> int:
     """Run the inform pipeline"""
     pipeline_name = "inform"
     project = RailProject.load_config(config_file)
@@ -186,7 +188,7 @@ def inform(config_file, **kwargs):
 @pipe_options.flavor()
 @pipe_options.selection()
 @pipe_options.run_mode()
-def estimate_single(config_file, **kwargs):
+def estimate_single(config_file: str, **kwargs: Any) -> int:
     """Run the estimation pipeline"""
     pipeline_name = "estimate"
     project = RailProject.load_config(config_file)
@@ -208,7 +210,7 @@ def estimate_single(config_file, **kwargs):
 @pipe_options.flavor()
 @pipe_options.selection()
 @pipe_options.run_mode()
-def evaluate_single(config_file, **kwargs):
+def evaluate_single(config_file: str, **kwargs: Any) -> int:
     """Run the evaluation pipeline"""
     pipeline_name = "evaluate"
     project = RailProject.load_config(config_file)
@@ -230,7 +232,7 @@ def evaluate_single(config_file, **kwargs):
 @pipe_options.flavor()
 @pipe_options.selection()
 @pipe_options.run_mode()
-def pz_single(config_file, **kwargs):
+def pz_single(config_file: str, **kwargs: Any) -> int:
     """Run the pz pipeline"""
     pipeline_name = "pz"
     project = RailProject.load_config(config_file)
@@ -252,7 +254,7 @@ def pz_single(config_file, **kwargs):
 @pipe_options.flavor()
 @pipe_options.selection()
 @pipe_options.run_mode()
-def tomography_single(config_file, **kwargs):
+def tomography_single(config_file : str, **kwargs: Any) -> int:
     """Run the tomography pipeline"""
     pipeline_name = "tomography"
     project = RailProject.load_config(config_file)
@@ -274,7 +276,7 @@ def tomography_single(config_file, **kwargs):
 @pipe_options.flavor()
 @pipe_options.selection()
 @pipe_options.run_mode()
-def sompz_single(config_file, **kwargs):
+def sompz_single(config_file: str, **kwargs: Any) -> int:
     """Run the sompz pipeline"""
     pipeline_name = "sompz"
     project = RailProject.load_config(config_file)
