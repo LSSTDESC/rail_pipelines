@@ -93,7 +93,7 @@ def run_group() -> None:
 @pipe_options.flavor()
 @pipe_options.run_mode()
 def photmetric_errors_pipeline(config_file: str, **kwargs: Any) -> int:
-    """Run the photmetric_errors analysis pipeline"""
+    """Run the photometric errors analysis pipeline"""
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
     selections = project.get_selection_args(kwargs.pop('selection'))
@@ -144,7 +144,7 @@ def truth_to_observed_pipeline(config_file: str, **kwargs: Any) -> int:
     return ok
 
 
-@pipe_cli.command(name="blending")
+@run_group.command(name="blending")
 @pipe_options.config_file()
 @pipe_options.selection()
 @pipe_options.flavor()
