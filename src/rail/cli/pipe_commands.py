@@ -26,7 +26,7 @@ def inspect_command(config_file: str) -> int:
 @pipe_options.config_file()
 @pipe_options.flavor()
 def build_command(config_file: str, **kwargs: Any) -> int:
-    """Build the ceci pipeline configurtion files"""
+    """Build the ceci pipeline configuration files"""
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
     iter_kwargs = project.generate_kwargs_iterable(flavor=flavors)
