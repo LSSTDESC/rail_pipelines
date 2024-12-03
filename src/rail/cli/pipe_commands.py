@@ -63,22 +63,14 @@ def reduce_command(config_file: str, **kwargs: Any) -> int:
 @pipe_options.run_mode()
 def subsample_command(config_file: str, **kwargs: Any) -> int:
     """Make a training or test data set by randomly selecting objects"""
+    """Make a training data set by randomly selecting objects"""
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
     selections = project.get_selection_args(kwargs.pop('selection'))
     iter_kwargs = project.generate_kwargs_iterable(flavor=flavors, selection=selections)
     ok = 0
-    pipeline_name = "truth_to_observed"
-
-    pipeline_catalog_config = pipe_scripts.TruthToObservedPipelineCatalogConfiguration(
-        project, source_catalog_tag='reduced', sink_catalog_tag='degraded',
-    )
     for kw in iter_kwargs:
-        ok |= pipe_scripts.run_pipeline_on_catalog(
-            project, pipeline_name,
-            pipeline_catalog_config,
-            **kw, **kwargs,
-        )
+        ok |= pipe_scripts.subsample_data(project, **kw, **kwargs)
     return ok
 
 
@@ -100,10 +92,12 @@ def photmetric_errors_pipeline(config_file: str, **kwargs: Any) -> int:
     iter_kwargs = project.generate_kwargs_iterable(flavor=flavors, selection=selections)
     ok = 0
     pipeline_name = "photometric_errors"
-
+    pipeline_info = project.get_pipeline(pipeline_name)
+    input_catalog_name = pipeline_info['InputCatalogTag']
     pipeline_catalog_config = pipe_scripts.PhotmetricErrorsPipelineCatalogConfiguration(
-        project, source_catalog_tag='reduced', sink_catalog_tag='degraded',
+        project, source_catalog_tag=input_catalog_name, sink_catalog_tag='degraded',
     )
+
     for kw in iter_kwargs:
         ok |= pipe_scripts.run_pipeline_on_catalog(
             project, pipeline_name,
@@ -125,7 +119,7 @@ def truth_to_observed_pipeline(config_file: str, **kwargs: Any) -> int:
     selections = project.get_selection_args(kwargs.pop('selection'))
     iter_kwargs = project.generate_kwargs_iterable(flavor=flavors, selection=selections)
     ok = 0
-    pipeline_name = "spec_selection"
+    pipeline_name = "truth_to_observed"
     pipeline_info = project.get_pipeline(pipeline_name)
     input_catalog_name = pipeline_info['InputCatalogTag']
     pipeline_catalog_config = pipe_scripts.SpectroscopicPipelineCatalogConfiguration(
@@ -179,15 +173,29 @@ def blending_pipeline(config_file: str, **kwargs: Any) -> int:
 @pipe_options.selection()
 @pipe_options.flavor()
 @pipe_options.run_mode()
-def spectroscopic_selection_pipeline(cconfig_file: str, **kwargs: Any) -> int:
+def spectroscopic_selection_pipeline(config_file: str, **kwargs: Any) -> int:
     """Run the spectroscopic selection data pipeline"""
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
     selections = project.get_selection_args(kwargs.pop('selection'))
     iter_kwargs = project.generate_kwargs_iterable(flavor=flavors, selection=selections)
     ok = 0
+    pipeline_name = "spec_selection"
+    pipeline_info = project.get_pipeline(pipeline_name)   
+    input_catalog_name = pipeline_info['InputCatalogTag']    
+    pipeline_catalog_config = pipe_scripts.SpectroscopicPipelineCatalogConfiguration(
+        project,
+        source_catalog_tag=input_catalog_name,
+        sink_catalog_tag='degraded',
+        source_catalog_basename="output_dereddener_errors.pq",
+    )
+
     for kw in iter_kwargs:
-        ok |= pipe_scripts.spectroscopic_selection_pipeline(project, **kw, **kwargs)
+        ok |= pipe_scripts.run_pipeline_on_catalog(
+            project, pipeline_name,
+            pipeline_catalog_config,
+            **kw, **kwargs,
+        )
     return ok
 
 
