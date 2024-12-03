@@ -12,6 +12,7 @@ from rail.cli.options import (
 __all__: list[str] = [
     "RunMode",
     "config_path",
+    "force",
     "flavor",
     "input_dir",
     "input_file",
@@ -52,6 +53,12 @@ config_path = PartialOption(
     "--config_path",
     help="Path to configuration file",
     type=click.Path(),
+)
+
+force = PartialOption(
+    "--force",
+    help="Overwrite existing ceci configuration files",
+    is_flag=True,
 )
 
 flavor = PartialOption(
