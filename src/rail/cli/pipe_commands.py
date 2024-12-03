@@ -17,16 +17,16 @@ def pipe_cli() -> None:
 
 @pipe_cli.command(name="inspect")
 @pipe_options.config_file()
-def inspect(config_file: str) -> int:
+def inspect_command(config_file: str) -> int:
     """Inspect a rail pipeline project config"""
     return pipe_scripts.inspect(config_file)
 
 
-@pipe_cli.command()
+@pipe_cli.command(name="build")
 @pipe_options.config_file()
 @pipe_options.flavor()
-def build_pipelines(config_file: str, **kwargs: Any) -> int:
-    """Build the ceci pipeline configuraiton files"""
+def build_command(config_file: str, **kwargs: Any) -> int:
+    """Build the ceci pipeline configurtion files"""
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
     iter_kwargs = project.generate_kwargs_iterable(flavor=flavors)
@@ -36,13 +36,13 @@ def build_pipelines(config_file: str, **kwargs: Any) -> int:
     return ok
 
 
-@pipe_cli.command()
+@pipe_cli.command(name="reduce")
 @pipe_options.config_file()
 @pipe_options.input_tag()
 @pipe_options.input_selection()
 @pipe_options.selection()
 @pipe_options.run_mode()
-def reduce_roman_rubin(config_file: str, **kwargs: Any) -> int:
+def reduce_command(config_file: str, **kwargs: Any) -> int:
     """Reduce the roman rubin simulations for PZ analysis"""
     project = RailProject.load_config(config_file)
     selections = project.get_selection_args(kwargs.pop('selection'))
@@ -55,13 +55,14 @@ def reduce_roman_rubin(config_file: str, **kwargs: Any) -> int:
     return ok
 
 
-@pipe_cli.command(name="truth-to-observed")
+@pipe_cli.command(name="subsample")
 @pipe_options.config_file()
 @pipe_options.selection()
 @pipe_options.flavor()
+@pipe_options.label()
 @pipe_options.run_mode()
-def truth_to_observed_pipeline(config_file: str, **kwargs: Any) -> int:
-    """Run the truth-to-observed analysis pipeline"""
+def subsample_command(config_file: str, **kwargs: Any) -> int:
+    """Make a training or test data set by randomly selecting objects"""
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
     selections = project.get_selection_args(kwargs.pop('selection'))
@@ -81,7 +82,12 @@ def truth_to_observed_pipeline(config_file: str, **kwargs: Any) -> int:
     return ok
 
 
-@pipe_cli.command(name="phot-errors")
+@pipe_cli.group(name="run")
+def run_group() -> None:
+    """Run a pipeline"""
+
+    
+@run_group.command(name="phot-errors")
 @pipe_options.config_file()
 @pipe_options.selection()
 @pipe_options.flavor()
@@ -107,13 +113,13 @@ def photmetric_errors_pipeline(config_file: str, **kwargs: Any) -> int:
     return ok
 
 
-@pipe_cli.command(name="spec-selection")
+@run_group.command(name="truth-to-observed")
 @pipe_options.config_file()
 @pipe_options.selection()
 @pipe_options.flavor()
 @pipe_options.run_mode()
-def spectroscopic_selection_pipeline(config_file: str, **kwargs: Any) -> int:
-    """Run the spectroscopic selection analysis pipeline"""
+def truth_to_observed_pipeline(config_file: str, **kwargs: Any) -> int:
+    """Run the truth-to-observed data pipeline"""
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
     selections = project.get_selection_args(kwargs.pop('selection'))
@@ -122,7 +128,6 @@ def spectroscopic_selection_pipeline(config_file: str, **kwargs: Any) -> int:
     pipeline_name = "spec_selection"
     pipeline_info = project.get_pipeline(pipeline_name)
     input_catalog_name = pipeline_info['InputCatalogTag']
-
     pipeline_catalog_config = pipe_scripts.SpectroscopicPipelineCatalogConfiguration(
         project,
         source_catalog_tag=input_catalog_name,
@@ -169,30 +174,29 @@ def blending_pipeline(config_file: str, **kwargs: Any) -> int:
     return ok
 
 
-@pipe_cli.command(name="subsample")
+@run_group.command(name="spec-selection")
 @pipe_options.config_file()
-@pipe_options.flavor()
 @pipe_options.selection()
-@pipe_options.label()
+@pipe_options.flavor()
 @pipe_options.run_mode()
-def subsample_data(config_file: str, **kwargs: Any) -> int:
-    """Make a training data set by randomly selecting objects"""
+def spectroscopic_selection_pipeline(cconfig_file: str, **kwargs: Any) -> int:
+    """Run the spectroscopic selection data pipeline"""
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
     selections = project.get_selection_args(kwargs.pop('selection'))
     iter_kwargs = project.generate_kwargs_iterable(flavor=flavors, selection=selections)
     ok = 0
     for kw in iter_kwargs:
-        ok |= pipe_scripts.subsample_data(project, **kw, **kwargs)
+        ok |= pipe_scripts.spectroscopic_selection_pipeline(project, **kw, **kwargs)
     return ok
 
 
-@pipe_cli.command(name="inform")
+@run_group.command(name="inform")
 @pipe_options.config_file()
 @pipe_options.flavor()
 @pipe_options.selection()
 @pipe_options.run_mode()
-def inform(config_file: str, **kwargs: Any) -> int:
+def inform_single(config_file: str, **kwargs: Any) -> int:
     """Run the inform pipeline"""
     pipeline_name = "inform"
     project = RailProject.load_config(config_file)
@@ -209,7 +213,7 @@ def inform(config_file: str, **kwargs: Any) -> int:
     return ok
 
 
-@pipe_cli.command(name="estimate")
+@run_group.command(name="estimate")
 @pipe_options.config_file()
 @pipe_options.flavor()
 @pipe_options.selection()
@@ -231,7 +235,7 @@ def estimate_single(config_file: str, **kwargs: Any) -> int:
     return ok
 
 
-@pipe_cli.command(name="evaluate")
+@run_group.command(name="evaluate")
 @pipe_options.config_file()
 @pipe_options.flavor()
 @pipe_options.selection()
@@ -253,7 +257,7 @@ def evaluate_single(config_file: str, **kwargs: Any) -> int:
     return ok
 
 
-@pipe_cli.command(name="pz")
+@run_group.command(name="pz")
 @pipe_options.config_file()
 @pipe_options.flavor()
 @pipe_options.selection()
@@ -275,7 +279,7 @@ def pz_single(config_file: str, **kwargs: Any) -> int:
     return ok
 
 
-@pipe_cli.command(name="tomography")
+@run_group.command(name="tomography")
 @pipe_options.config_file()
 @pipe_options.flavor()
 @pipe_options.selection()
@@ -297,7 +301,7 @@ def tomography_single(config_file : str, **kwargs: Any) -> int:
     return ok
 
 
-@pipe_cli.command(name="sompz")
+@run_group.command(name="sompz")
 @pipe_options.config_file()
 @pipe_options.flavor()
 @pipe_options.selection()
