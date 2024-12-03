@@ -1,5 +1,5 @@
 # These are used to make all the other paths
-CommonPaths:  
+CommonPaths:
     root: /sdf/data/rubin/shared/pz
     scratch_root: "{root}"
     project: eac_test
@@ -33,12 +33,20 @@ Files:
     train_file_zCOSMOS_100k:
         NumObjects: 100000
         Seed: 4321
-        PathTemplate: "{catalogs_dir}/train/{project}_{selection}_zCOSMOS_100k.hdf5"    
+        PathTemplate: "{catalogs_dir}/train/{project}_{selection}_zCOSMOS_100k.hdf5"
         SourceFileBasename: output_select_zCOSMOS.pq
 
 # These are ceci pipelines that we will be running
-Pipelines: 
+Pipelines:
     truth_to_observed:
+        PipelineClass: rail.pipelines.degradation.truth_to_observed.TruthToObservedPipeline
+        CatalogTag: roman_rubin
+        InputCatalogTag: reduced
+        kwargs:
+            error_models: ErrorModels
+            selectors: SpecSelections
+            blending: true
+    photometric_errors:
         PipelineClass: rail.pipelines.degradation.apply_phot_errors.ApplyPhotErrorsPipeline
         CatalogTag: roman_rubin
         InputCatalogTag: reduced
@@ -60,7 +68,7 @@ Pipelines:
         CatalogTag: roman_rubin
         kwargs:
             algorithms: PZAlgorithms
-        InputFileTags: 
+        InputFileTags:
             input:
                 flavor: baseline
                 tag: train
@@ -141,7 +149,6 @@ SpecSelections:
 #        Module: rail.creation.degraders.spectroscopic_selections
 
 
-
 # These describe all the algorithms that estimate PZ
 PZAlgorithms:
     trainz:
@@ -184,6 +191,7 @@ Summarizers:
     point_est_hist:
         Summarize: PointEstHistMaskedSummarizer
         Module: rail.estimation.algos.point_est_hist
+
 
 # The describe the error models we use in the truth_to_observed pipeline
 ErrorModels:
@@ -256,4 +264,3 @@ Flavors:
             inform:
                 inform_gpz:
                     gpz_method: GL
-
