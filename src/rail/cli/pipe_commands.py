@@ -93,7 +93,7 @@ def photmetric_errors_pipeline(config_file: str, **kwargs: Any) -> int:
     selections = project.get_selection_args(kwargs.pop('selection'))
     iter_kwargs = project.generate_kwargs_iterable(flavor=flavors, selection=selections)
     ok = 0
-    pipeline_name = "photmetric_errors"
+    pipeline_name = "photometric_errors"
 
     pipeline_catalog_config = pipe_scripts.PhotmetricErrorsPipelineCatalogConfiguration(
         project, source_catalog_tag='reduced', sink_catalog_tag='degraded',
