@@ -200,7 +200,7 @@ class TruthToObservedPipelineCatalogConfiguration(PipelineCatalogConfiguration):
         convert_commands = [convert_command]
         return convert_commands
 
-    
+
 class PhotmetricErrorsPipelineCatalogConfiguration(PipelineCatalogConfiguration):
 
     def get_convert_commands(self, sink_dir: str) -> list[list[str]]:
