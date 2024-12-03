@@ -200,6 +200,21 @@ class TruthToObservedPipelineCatalogConfiguration(PipelineCatalogConfiguration):
         convert_commands = [convert_command]
         return convert_commands
 
+    
+class PhotmetricErrorsPipelineCatalogConfiguration(PipelineCatalogConfiguration):
+
+    def get_convert_commands(self, sink_dir: str) -> list[list[str]]:
+        convert_command = [
+            "tables-io",
+            "convert",
+            "--input",
+            f"{sink_dir}/output_dereddener_errors.pq",
+            "--output",
+            f"{sink_dir}/output.hdf5",
+        ]
+        convert_commands = [convert_command]
+        return convert_commands
+
 
 class SpectroscopicPipelineCatalogConfiguration(PipelineCatalogConfiguration):
 

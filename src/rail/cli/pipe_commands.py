@@ -81,6 +81,32 @@ def truth_to_observed_pipeline(config_file: str, **kwargs: Any) -> int:
     return ok
 
 
+@pipe_cli.command(name="phot-errors")
+@pipe_options.config_file()
+@pipe_options.selection()
+@pipe_options.flavor()
+@pipe_options.run_mode()
+def photmetric_errors_pipeline(config_file: str, **kwargs: Any) -> int:
+    """Run the photmetric_errors analysis pipeline"""
+    project = RailProject.load_config(config_file)
+    flavors = project.get_flavor_args(kwargs.pop('flavor'))
+    selections = project.get_selection_args(kwargs.pop('selection'))
+    iter_kwargs = project.generate_kwargs_iterable(flavor=flavors, selection=selections)
+    ok = 0
+    pipeline_name = "photmetric_errors"
+
+    pipeline_catalog_config = pipe_scripts.PhotmetricErrorsPipelineCatalogConfiguration(
+        project, source_catalog_tag='reduced', sink_catalog_tag='degraded',
+    )
+    for kw in iter_kwargs:
+        ok |= pipe_scripts.run_pipeline_on_catalog(
+            project, pipeline_name,
+            pipeline_catalog_config,
+            **kw, **kwargs,
+        )
+    return ok
+
+
 @pipe_cli.command(name="spec-selection")
 @pipe_options.config_file()
 @pipe_options.selection()
