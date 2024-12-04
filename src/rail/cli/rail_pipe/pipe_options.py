@@ -2,7 +2,7 @@ import enum
 
 import click
 
-from rail.cli.options import (
+from rail.cli.rail.options import (
     EnumChoice,
     PartialOption,
     PartialArgument,

@@ -13,7 +13,7 @@ import yaml
 from rail.utils import catalog_utils
 from rail.core.stage import RailPipeline
 from rail.utils.project import RailProject
-from rail.cli.pipe_options import RunMode
+from rail.cli.rail_pipe.pipe_options import RunMode
 
 
 def handle_command(

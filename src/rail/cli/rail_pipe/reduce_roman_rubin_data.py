@@ -7,7 +7,7 @@ import pyarrow.dataset as ds
 import pyarrow.parquet as pq
 from pyarrow import acero
 
-from rail.cli.pipe_options import RunMode
+from rail.cli.rail_pipe.pipe_options import RunMode
 from rail.utils.project import RailProject
 
 

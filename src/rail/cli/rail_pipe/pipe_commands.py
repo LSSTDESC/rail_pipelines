@@ -5,8 +5,8 @@ import click
 from rail.core import __version__
 
 from rail.utils.project import RailProject
-from rail.cli import pipe_options, pipe_scripts
-from rail.cli.reduce_roman_rubin_data import reduce_roman_rubin_data
+from rail.cli.rail_pipe import pipe_options, pipe_scripts
+from rail.cli.rail_pipe.reduce_roman_rubin_data import reduce_roman_rubin_data
 
 
 @click.group()
@@ -37,25 +37,6 @@ def build_command(config_file: str, **kwargs: Any) -> int:
     return ok
 
 
-@pipe_cli.command(name="reduce")
-@pipe_options.config_file()
-@pipe_options.input_tag()
-@pipe_options.input_selection()
-@pipe_options.selection()
-@pipe_options.run_mode()
-def reduce_command(config_file: str, **kwargs: Any) -> int:
-    """Reduce the roman rubin simulations for PZ analysis"""
-    project = RailProject.load_config(config_file)
-    selections = project.get_selection_args(kwargs.pop('selection'))
-    input_selections = kwargs.pop('input_selection')
-    iter_kwargs = project.generate_kwargs_iterable(selection=selections, input_selection=input_selections)
-    input_tag = kwargs.pop('input_tag', 'truth')
-    ok = 0
-    for kw in iter_kwargs:
-        ok |= reduce_roman_rubin_data(project, input_tag, **kw, **kwargs)
-    return ok
-
-
 @pipe_cli.command(name="subsample")
 @pipe_options.config_file()
 @pipe_options.selection()
@@ -72,6 +53,30 @@ def subsample_command(config_file: str, **kwargs: Any) -> int:
     ok = 0
     for kw in iter_kwargs:
         ok |= pipe_scripts.subsample_data(project, **kw, **kwargs)
+    return ok
+
+
+@pipe_cli.group(name="reduce")
+def reduce_group() -> None:
+    """Reduce input data for PZ analysis"""
+    
+
+@reduce_group.command(name="roman_rubin")
+@pipe_options.config_file()
+@pipe_options.input_tag()
+@pipe_options.input_selection()
+@pipe_options.selection()
+@pipe_options.run_mode()
+def reduce_roman_rubin(config_file: str, **kwargs: Any) -> int:
+    """Reduce the roman rubin simulations for PZ analysis"""
+    project = RailProject.load_config(config_file)
+    selections = project.get_selection_args(kwargs.pop('selection'))
+    input_selections = kwargs.pop('input_selection')
+    iter_kwargs = project.generate_kwargs_iterable(selection=selections, input_selection=input_selections)
+    input_tag = kwargs.pop('input_tag', 'truth')
+    ok = 0
+    for kw in iter_kwargs:
+        ok |= reduce_roman_rubin_data(project, input_tag, **kw, **kwargs)
     return ok
 
 
