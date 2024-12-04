@@ -742,6 +742,8 @@ def subsample_data(
 def build_pipelines(
     project: RailProject,
     flavor: str='baseline',
+    *,
+    force: bool=False,
 ) -> int:
     """Build ceci pipeline configuraiton files for this project
 
@@ -752,6 +754,9 @@ def build_pipelines(
 
     flavor: str
         Which analysis flavor to draw from
+
+    force: bool
+        Force overwriting of existing pipeline files
 
     Returns
     -------
@@ -771,9 +776,11 @@ def build_pipelines(
             continue
         output_yaml = project.get_path('pipeline_path', pipeline=pipeline_name, flavor=flavor)
         if os.path.exists(output_yaml):
-            print(f"Skipping existing pipeline {output_yaml}")
-            continue
-
+            if force:
+                print(f"Overwriting existing pipeline {output_yaml}")
+            else:
+                print(f"Skipping existing pipeline {output_yaml}")
+                continue
         pipe_out_dir = os.path.dirname(output_yaml)
 
         try:

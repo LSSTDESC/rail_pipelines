@@ -25,6 +25,7 @@ def inspect_command(config_file: str) -> int:
 @pipe_cli.command(name="build")
 @pipe_options.config_file()
 @pipe_options.flavor()
+@pipe_options.force()
 def build_command(config_file: str, **kwargs: Any) -> int:
     """Build the ceci pipeline configuration files"""
     project = RailProject.load_config(config_file)
