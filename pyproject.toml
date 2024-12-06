@@ -38,7 +38,7 @@ dev = [
 ]
 
 [project.scripts]
-rail_pipe = "rail.cli.pipe_commands:pipe_cli"
+rail_pipe = "rail.cli.rail_pipe.pipe_commands:pipe_cli"
 
 [build-system]
 requires = [
