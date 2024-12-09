@@ -3,10 +3,9 @@ Utility code to help define standard paths for various data products
 """
 
 import copy
-# import enum
 import re
 from functools import partial
-from typing import Any
+from typing import Any, Mapping
 
 
 CommonPaths = dict(
@@ -24,6 +23,26 @@ PathTemplates = dict(
     ceci_output_dir="{project_dir}/data/{selection}_{flavor}",
     ceci_file_path="{tag}_{stage}.{suffix}",
 )
+
+
+def update_include_dict(
+    orig_dict: dict[str, Any],
+    include_dict: dict[str, Any],
+) -> None:
+    """Update a dict by updating (instead of replacing) sub-dicts
+
+    Parameters
+    ----------
+    orig_dict: dict[str, Any]
+        Original dict
+    include_dict: dict[str, Any],
+        Dict used to update the original
+    """
+    for key, val in include_dict.items():
+        if isinstance(val, Mapping) and key in orig_dict:
+            update_include_dict(orig_dict[key], val)
+        else:
+            orig_dict[key] = val
 
 
 def _get_required_interpolants(template: str) -> list[str]:

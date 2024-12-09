@@ -7,8 +7,8 @@ import pyarrow.dataset as ds
 import pyarrow.parquet as pq
 from pyarrow import acero
 
-from rail.cli.rail_pipe.pipe_options import RunMode
-from rail.utils.project import RailProject
+from .pipe_options import RunMode
+from ..utils.project import RailProject
 
 
 COLUMNS = [
