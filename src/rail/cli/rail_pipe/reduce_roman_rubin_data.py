@@ -8,7 +8,7 @@ import pyarrow.parquet as pq
 from pyarrow import acero
 
 from .pipe_options import RunMode
-from ..utils.project import RailProject
+from ...utils.project import RailProject
 
 
 COLUMNS = [

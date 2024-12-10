@@ -4,7 +4,7 @@ import click
 
 from rail.core import __version__
 
-from ..utils.project import RailProject
+from ...utils.project import RailProject
 from . import pipe_options, pipe_scripts
 from .reduce_roman_rubin_data import reduce_roman_rubin_data
 
