@@ -16,6 +16,24 @@ from rail.utils.project import RailProject
 from rail.cli.rail_pipe.pipe_options import RunMode
 
 
+S3DF_SLURM_OPTIONS: list[str] = [
+    "-p",
+    "milano",
+    "--account",
+    "rubin:commissioning@milano",
+    "--mem",
+    "16448",
+    "--parsable",
+]
+NERSC_SLURM_OPTIONS: list[str] = [
+]
+
+SLURM_OPTIONS = {
+    "s3df":S3DF_SLURM_OPTIONS,
+    "nersc":NERSC_SLURM_OPTIONS,
+}
+
+
 def handle_command(
     run_mode: RunMode,
     command_line: list[str],
@@ -60,6 +78,7 @@ def handle_commands(
     run_mode: RunMode,
     command_lines: list[list[str]],
     script_path:str | None=None,
+    site:str="s3df",
 ) -> int:
     """ Run a multiple commands in the mode requested
 
@@ -73,6 +92,9 @@ def handle_commands(
 
     script_path: str | None
         Path to write the slurm submit script to
+
+    site: str
+        Site to use for running slurm commands
 
     Returns
     -------
@@ -103,9 +125,14 @@ def handle_commands(
             fout.write(f"{com_line}\n")
 
     script_log = script_path.replace('.sh', '.log')
+
+    command_line = ["sbatch", "-o", script_log]
+    command_line += SLURM_OPTIONS[site]
+    command_line += [script_path]
+    
     try:
         with subprocess.Popen(
-                ["sbatch", "-o", script_log, "--mem", "16448", "-p", "milano", "--parsable", script_path],
+                command_line,
                 stdout=subprocess.PIPE,
         ) as sbatch:
             assert sbatch.stdout
@@ -288,6 +315,8 @@ def run_pipeline_on_catalog(
     input_catalog_name = pipeline_info['InputCatalogTag']
     input_catalog = project.get_catalogs().get(input_catalog_name, {})
 
+    site = kwargs.get('site', 's3df')
+    
     # Loop through all possible combinations of the iteration variables that are
     # relevant to this pipeline
     if (iteration_vars := input_catalog.get("IterationVars", {})) is not None:
@@ -332,6 +361,7 @@ def run_pipeline_on_catalog(
                         *convert_commands,
                     ],
                     script_path,
+                    site=site,
                 )
             except Exception as msg:
                 print(msg)
@@ -389,8 +419,10 @@ def run_pipeline_on_single_input(
         log_dir=f"{sink_dir}/logs",
     )
 
+    site = kwargs.get('site', 's3df')
+
     try:
-        statuscode = handle_commands(run_mode, [command_line], script_path)
+        statuscode = handle_commands(run_mode, [command_line], script_path, site=site)
     except Exception as msg:
         print(msg)
         statuscode = 1

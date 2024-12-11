@@ -4,7 +4,7 @@ import click
 
 from rail.core import __version__
 
-from ...utils.project import RailProject
+from rail.utils.project import RailProject
 from . import pipe_options, pipe_scripts
 from .reduce_roman_rubin_data import reduce_roman_rubin_data
 
@@ -43,6 +43,7 @@ def build_command(config_file: str, **kwargs: Any) -> int:
 @pipe_options.flavor()
 @pipe_options.label()
 @pipe_options.run_mode()
+@pipe_options.site()
 def subsample_command(config_file: str, **kwargs: Any) -> int:
     """Make a training or test data set by randomly selecting objects"""
     """Make a training data set by randomly selecting objects"""
@@ -67,6 +68,7 @@ def reduce_group() -> None:
 @pipe_options.input_selection()
 @pipe_options.selection()
 @pipe_options.run_mode()
+@pipe_options.site()
 def reduce_roman_rubin(config_file: str, **kwargs: Any) -> int:
     """Reduce the roman rubin simulations for PZ analysis"""
     project = RailProject.load_config(config_file)
@@ -90,6 +92,7 @@ def run_group() -> None:
 @pipe_options.selection()
 @pipe_options.flavor()
 @pipe_options.run_mode()
+@pipe_options.site()
 def photmetric_errors_pipeline(config_file: str, **kwargs: Any) -> int:
     """Run the photometric errors analysis pipeline"""
     project = RailProject.load_config(config_file)
@@ -118,6 +121,7 @@ def photmetric_errors_pipeline(config_file: str, **kwargs: Any) -> int:
 @pipe_options.selection()
 @pipe_options.flavor()
 @pipe_options.run_mode()
+@pipe_options.site()
 def truth_to_observed_pipeline(config_file: str, **kwargs: Any) -> int:
     """Run the truth-to-observed data pipeline"""
     project = RailProject.load_config(config_file)
@@ -149,6 +153,7 @@ def truth_to_observed_pipeline(config_file: str, **kwargs: Any) -> int:
 @pipe_options.selection()
 @pipe_options.flavor()
 @pipe_options.run_mode()
+@pipe_options.site()
 def blending_pipeline(config_file: str, **kwargs: Any) -> int:
     """Run the blending analysis pipeline"""
     project = RailProject.load_config(config_file)
@@ -179,6 +184,7 @@ def blending_pipeline(config_file: str, **kwargs: Any) -> int:
 @pipe_options.selection()
 @pipe_options.flavor()
 @pipe_options.run_mode()
+@pipe_options.site()
 def spectroscopic_selection_pipeline(config_file: str, **kwargs: Any) -> int:
     """Run the spectroscopic selection data pipeline"""
     project = RailProject.load_config(config_file)
@@ -210,6 +216,7 @@ def spectroscopic_selection_pipeline(config_file: str, **kwargs: Any) -> int:
 @pipe_options.flavor()
 @pipe_options.selection()
 @pipe_options.run_mode()
+@pipe_options.site()
 def inform_single(config_file: str, **kwargs: Any) -> int:
     """Run the inform pipeline"""
     pipeline_name = "inform"
@@ -232,6 +239,7 @@ def inform_single(config_file: str, **kwargs: Any) -> int:
 @pipe_options.flavor()
 @pipe_options.selection()
 @pipe_options.run_mode()
+@pipe_options.site()
 def estimate_single(config_file: str, **kwargs: Any) -> int:
     """Run the estimation pipeline"""
     pipeline_name = "estimate"
@@ -254,6 +262,7 @@ def estimate_single(config_file: str, **kwargs: Any) -> int:
 @pipe_options.flavor()
 @pipe_options.selection()
 @pipe_options.run_mode()
+@pipe_options.site()
 def evaluate_single(config_file: str, **kwargs: Any) -> int:
     """Run the evaluation pipeline"""
     pipeline_name = "evaluate"
@@ -276,6 +285,7 @@ def evaluate_single(config_file: str, **kwargs: Any) -> int:
 @pipe_options.flavor()
 @pipe_options.selection()
 @pipe_options.run_mode()
+@pipe_options.site()
 def pz_single(config_file: str, **kwargs: Any) -> int:
     """Run the pz pipeline"""
     pipeline_name = "pz"
@@ -298,6 +308,7 @@ def pz_single(config_file: str, **kwargs: Any) -> int:
 @pipe_options.flavor()
 @pipe_options.selection()
 @pipe_options.run_mode()
+@pipe_options.site()
 def tomography_single(config_file : str, **kwargs: Any) -> int:
     """Run the tomography pipeline"""
     pipeline_name = "tomography"
@@ -320,6 +331,7 @@ def tomography_single(config_file : str, **kwargs: Any) -> int:
 @pipe_options.flavor()
 @pipe_options.selection()
 @pipe_options.run_mode()
+@pipe_options.site()
 def sompz_single(config_file: str, **kwargs: Any) -> int:
     """Run the sompz pipeline"""
     pipeline_name = "sompz"

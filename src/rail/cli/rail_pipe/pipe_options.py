@@ -28,6 +28,7 @@ __all__: list[str] = [
     "pdf_path",
     "run_mode",
     "selection",
+    "site",
     "output_dir",
     "output_file",
     "truth_path",
@@ -81,6 +82,13 @@ selection = PartialOption(
     help="Data selection",
     multiple=True,
     default=["gold"],
+)
+
+
+site = PartialOption(
+    "--site",
+    help="site for slurm submission",
+    default="s3df",
 )
 
 
