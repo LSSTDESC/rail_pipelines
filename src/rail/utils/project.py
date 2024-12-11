@@ -53,13 +53,15 @@ class RailProject:
         """ Create and return a RailProject from a yaml config file"""
         project_name = Path(config_file).stem
         with open(config_file, "r", encoding='utf-8') as fp:
-            config_dict = yaml.safe_load(fp)
-        includes = config_dict.get('Includes', [])
+            config_orig = yaml.safe_load(fp)
+        includes = config_orig.get('Includes', [])
+        config_dict = {}
         # FIXME, make this recursive to allow for multiple layers of includes
         for include_ in includes:
             with open(include_, "r", encoding='utf-8') as fp:
                 config_extra = yaml.safe_load(fp)
             name_utils.update_include_dict(config_dict, config_extra)
+        name_utils.update_include_dict(config_dict, config_orig)
         project = RailProject(project_name, config_dict)
         # project.resolve_common()
         return project
