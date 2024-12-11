@@ -22,15 +22,22 @@ S3DF_SLURM_OPTIONS: list[str] = [
     "--account",
     "rubin:commissioning@milano",
     "--mem",
-    "16448",
+    "16G",
     "--parsable",
 ]
-NERSC_SLURM_OPTIONS: list[str] = [
+PERLMUTTER_SLURM_OPTIONS: list[str] = [
+    "--account",
+    "m1727",
+    "--constraint",
+    "cpu",
+    "--qos",
+    "regular"
+    "--parsable",
 ]
 
 SLURM_OPTIONS = {
     "s3df":S3DF_SLURM_OPTIONS,
-    "nersc":NERSC_SLURM_OPTIONS,
+    "perlmutter":PERLMUTTER_SLURM_OPTIONS,
 }
 
 
@@ -405,7 +412,7 @@ def run_pipeline_on_single_input(
         Status returned by the command.  0 for success, exit code otherwise
     """
     pipeline_path = project.get_path('pipeline_path', pipeline=pipeline_name, **kwargs)
-    pipeline_config = pipeline_path.replace('.yaml', '_config.yaml')
+    pipeline_config = pipeline_path.replace('.yaml', '_config.yml')
     sink_dir = project.get_path('ceci_output_dir', **kwargs)
     script_path = os.path.join(sink_dir, f"submit_{pipeline_name}.sh")
 
