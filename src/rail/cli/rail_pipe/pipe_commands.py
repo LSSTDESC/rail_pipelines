@@ -43,7 +43,6 @@ def build_command(config_file: str, **kwargs: Any) -> int:
 @pipe_options.flavor()
 @pipe_options.label()
 @pipe_options.run_mode()
-@pipe_options.site()
 def subsample_command(config_file: str, **kwargs: Any) -> int:
     """Make a training or test data set by randomly selecting objects"""
     """Make a training data set by randomly selecting objects"""
