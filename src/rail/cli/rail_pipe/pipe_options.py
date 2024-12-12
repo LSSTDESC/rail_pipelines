@@ -11,6 +11,7 @@ from rail.cli.rail.options import (
 
 __all__: list[str] = [
     "RunMode",
+    "args",
     "config_path",
     "force",
     "flavor",
@@ -42,6 +43,13 @@ class RunMode(enum.Enum):
     dry_run = 0
     bash = 1
     slurm = 2
+
+
+args = PartialArgument(
+    "args",
+    type=str,
+    nargs=-1,
+)
 
 
 config_file = PartialArgument(

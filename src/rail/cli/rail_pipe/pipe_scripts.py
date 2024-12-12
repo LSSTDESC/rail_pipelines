@@ -85,7 +85,6 @@ def handle_commands(
     run_mode: RunMode,
     command_lines: list[list[str]],
     script_path:str | None=None,
-    site:str="s3df",
 ) -> int:
     """ Run a multiple commands in the mode requested
 
@@ -99,9 +98,6 @@ def handle_commands(
 
     script_path: str | None
         Path to write the slurm submit script to
-
-    site: str
-        Site to use for running slurm commands
 
     Returns
     -------
@@ -131,24 +127,50 @@ def handle_commands(
             com_line = ' '.join(command_)
             fout.write(f"{com_line}\n")
 
+    script_out = script_path.replace('.sh', '.out')
     script_log = script_path.replace('.sh', '.log')
 
-    command_line = ["sbatch", "-o", script_log]
-    command_line += SLURM_OPTIONS[site]
-    command_line += [script_path]
+    command_line = ["srun", "--output", script_out, "--error", script_path]
     
     try:
         with subprocess.Popen(
                 command_line,
                 stdout=subprocess.PIPE,
-        ) as sbatch:
-            assert sbatch.stdout
-            line = sbatch.stdout.read().decode().strip()
+        ) as srun:
+            assert srun.stdout
+            line = srun.stdout.read().decode().strip()
             ret_val = int(line.split("|")[0])
     except TypeError as msg:
         raise TypeError(f"Bad slurm submit: {msg}") from msg
     return ret_val
 
+
+def sbatch_wrap(run_mode: RunMode, site: str, args: list[str]) -> int:
+    """ Wrap a rail_pipe command with site-based arguements
+
+    Parameters
+    ----------
+    run_mode: RunMode
+        How to run the command, e.g., dry_run, bash or slurm
+
+    site: str
+        Execution site, used to set sbatch options
+    
+    args: list[str]
+        Additional arguments
+
+    Returns
+    -------
+    returncode: int
+        Status.  0 for success, exit code otherwise
+    """
+    try:
+        slurm_options = SLURM_OPTIONS[site]
+    except KeyError as msg:
+        raise KeyError(f"{site} is not a recognized site, options are {SLURM_OPTIONS.keys()}")
+    command_line = ['sbatch'] + slurm_options + ["rail_pipe", "--run_mode", "slurm"] + list(args)
+    return handle_command(run_mode, command_line)
+    
 
 def inspect(config_file: str) -> int:
     """ Inspect a rail project file and print out the configuration
@@ -322,7 +344,6 @@ def run_pipeline_on_catalog(
     input_catalog_name = pipeline_info['InputCatalogTag']
     input_catalog = project.get_catalogs().get(input_catalog_name, {})
 
-    site = kwargs.get('site', 's3df')
     
     # Loop through all possible combinations of the iteration variables that are
     # relevant to this pipeline
@@ -368,7 +389,6 @@ def run_pipeline_on_catalog(
                         *convert_commands,
                     ],
                     script_path,
-                    site=site,
                 )
             except Exception as msg:
                 print(msg)
@@ -426,10 +446,8 @@ def run_pipeline_on_single_input(
         log_dir=f"{sink_dir}/logs",
     )
 
-    site = kwargs.get('site', 's3df')
-
     try:
-        statuscode = handle_commands(run_mode, [command_line], script_path, site=site)
+        statuscode = handle_commands(run_mode, [command_line], script_path)
     except Exception as msg:
         print(msg)
         statuscode = 1
