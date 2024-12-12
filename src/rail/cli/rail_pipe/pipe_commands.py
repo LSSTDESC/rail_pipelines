@@ -59,7 +59,7 @@ def subsample_command(config_file: str, **kwargs: Any) -> int:
 @pipe_options.run_mode()
 @pipe_options.site()
 @pipe_options.args()
-def sbatch_command(run_mode: pipe_options.RunMode, site: str, args: list[str]) -> None:
+def sbatch_command(run_mode: pipe_options.RunMode, site: str, args: list[str]) -> int:
     """Wrap a rail_pipe command with site-based arguements for slurm"""
     return pipe_scripts.sbatch_wrap(run_mode, site, args)
 
