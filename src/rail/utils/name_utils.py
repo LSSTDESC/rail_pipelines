@@ -26,8 +26,8 @@ PathTemplates = dict(
 
 
 def update_include_dict(
-    orig_dict: dict[str, Any],
-    include_dict: dict[str, Any],
+    orig_dict: dict[Any, Any],
+    include_dict: dict[Any, Any],
 ) -> None:
     """Update a dict by updating (instead of replacing) sub-dicts
 
@@ -39,7 +39,7 @@ def update_include_dict(
         Dict used to update the original
     """
     for key, val in include_dict.items():
-        if isinstance(val, Mapping) and key in orig_dict:
+        if isinstance(val, dict) and key in orig_dict:
             update_include_dict(orig_dict[key], val)
         else:
             orig_dict[key] = val

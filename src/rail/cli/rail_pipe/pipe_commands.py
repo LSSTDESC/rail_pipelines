@@ -4,7 +4,7 @@ import click
 
 from rail.core import __version__
 
-from ...utils.project import RailProject
+from rail.utils.project import RailProject
 from . import pipe_options, pipe_scripts
 from .reduce_roman_rubin_data import reduce_roman_rubin_data
 
@@ -45,7 +45,6 @@ def build_command(config_file: str, **kwargs: Any) -> int:
 @pipe_options.run_mode()
 def subsample_command(config_file: str, **kwargs: Any) -> int:
     """Make a training or test data set by randomly selecting objects"""
-    """Make a training data set by randomly selecting objects"""
     project = RailProject.load_config(config_file)
     flavors = project.get_flavor_args(kwargs.pop('flavor'))
     selections = project.get_selection_args(kwargs.pop('selection'))
@@ -54,6 +53,15 @@ def subsample_command(config_file: str, **kwargs: Any) -> int:
     for kw in iter_kwargs:
         ok |= pipe_scripts.subsample_data(project, **kw, **kwargs)
     return ok
+
+
+@pipe_cli.command(name="sbatch")
+@pipe_options.run_mode()
+@pipe_options.site()
+@pipe_options.args()
+def sbatch_command(run_mode: pipe_options.RunMode, site: str, args: list[str]) -> int:
+    """Wrap a rail_pipe command with site-based arguements for slurm"""
+    return pipe_scripts.sbatch_wrap(run_mode, site, args)
 
 
 @pipe_cli.group(name="reduce")

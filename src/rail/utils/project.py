@@ -55,7 +55,7 @@ class RailProject:
         with open(config_file, "r", encoding='utf-8') as fp:
             config_orig = yaml.safe_load(fp)
         includes = config_orig.get('Includes', [])
-        config_dict = {}
+        config_dict: dict[str, Any] = {}
         # FIXME, make this recursive to allow for multiple layers of includes
         for include_ in includes:
             with open(include_, "r", encoding='utf-8') as fp:
