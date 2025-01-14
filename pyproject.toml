@@ -37,9 +37,6 @@ dev = [
     "pylint", # Used for static linting of files
 ]
 
-[project.scripts]
-rail_pipe = "rail.cli.rail_pipe.pipe_commands:pipe_cli"
-
 [build-system]
 requires = [
     "setuptools>=62", # Used to build and package the Python project
@@ -56,7 +53,7 @@ testpaths = [
     "tests",
 ]
 addopts = [
-    "--cov=rail",
+    "--cov=src/rail",
     "--cov-report=html"
 ]
 
