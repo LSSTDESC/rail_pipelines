@@ -19,7 +19,6 @@ dynamic = ["version"]
 dependencies = [
     "pz-rail-base",
     "click",
-    "pyarrow",
 ]
 
 # On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
