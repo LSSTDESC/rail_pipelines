@@ -22,6 +22,7 @@ jobs:
       run: |
         sudo apt-get update
         python -m pip install --upgrade pip
+        apt install libbz2-dev
         pip install wheel
         pip install .
         pip install .[dev]
