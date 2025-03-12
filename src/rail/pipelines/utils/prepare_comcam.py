@@ -23,6 +23,7 @@ class PrepareComCamPipeline(RailPipeline):
 
     def __init__(
         self,
+        **kwargs,
     ):
 
         RailPipeline.__init__(self)
@@ -39,6 +40,7 @@ class PrepareComCamPipeline(RailPipeline):
             mag_name=active_catalog_config.band_template,
             mag_err_name=active_catalog_config.band_err_template,
             copy_cols=dict(
+                objectId='objectId',
                 ra='coord_ra',
                 dec='coord_dec',
             )
