@@ -32,8 +32,8 @@ class PrepareComCamPipeline(RailPipeline):
         DS.__class__.allow_overwrite = True
 
         active_catalog_config = catalog_utils.CatalogConfigBase.active_class()
-        band_name_dict = active_catalog_config.band_name_dict()        
-        
+        band_name_dict = active_catalog_config.band_name_dict()
+
         self.flux_to_mag = LSSTFluxToMagConverter.build(
             flux_name="{band}_cModelFlux",
             flux_err_name="{band}_cModelFluxErr",
@@ -45,7 +45,7 @@ class PrepareComCamPipeline(RailPipeline):
                 dec='coord_dec',
             )
         )
-            
+
         self.deredden = Dereddener.build(
             connections = dict(input=self.flux_to_mag.io.output),
             dustmap_dir=dustmap_dir,
