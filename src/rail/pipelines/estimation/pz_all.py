@@ -5,21 +5,13 @@ import ceci
 
 # Various rail modules
 from rail.core.stage import RailStage, RailPipeline
+from rail.utils.catalog_utils import CatalogConfigBase
 from rail.evaluation.single_evaluator import SingleEvaluator
 from rail.utils.algo_library import PZ_ALGORITHMS
 
 
 input_file = 'rubin_dm_dc2_example.pq'
 
-
-eval_shared_stage_opts = dict(
-    metrics=['all'],
-    exclude_metrics=['rmse', 'ks', 'kld', 'cvm', 'ad', 'rbpe', 'outlier'],
-    hdf5_groupname="",
-    limits=[0, 3.5],
-    truth_point_estimates=['redshift'],
-    point_estimates=['zmode'],
-)
 
 
 class PzPipeline(RailPipeline):
@@ -34,6 +26,17 @@ class PzPipeline(RailPipeline):
 
         DS = RailStage.data_store
         DS.__class__.allow_overwrite = True
+
+        active_catalog = CatalogConfigBase.active_class()
+
+        eval_shared_stage_opts = dict(
+            metrics=['all'],
+            exclude_metrics=['rmse', 'ks', 'kld', 'cvm', 'ad', 'rbpe', 'outlier'],
+            hdf5_groupname="",
+            limits=[0, 3.5],
+            truth_point_estimates=[active_catalog.redshift_col],
+            point_estimates=['zmode'],
+        )
 
         if algorithms is None:
             algorithms = PZ_ALGORITHMS
