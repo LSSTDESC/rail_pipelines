@@ -12,6 +12,7 @@ import pytest
         'rail.pipelines.estimation.inform_all.InformPipeline',
         'rail.pipelines.estimation.pz_all.PzPipeline',
         'rail.pipelines.estimation.tomography.TomographyPipeline',
+        'rail.pipelines.utils.prepare_observed.PrepareObservedPipeline',
         'rail.pipelines.examples.goldenspike.goldenspike.GoldenspikePipeline',
         'rail.pipelines.examples.survey_nonuniformity.survey_nonuniformity.SurveyNonuniformDegraderPipeline',
     ]
