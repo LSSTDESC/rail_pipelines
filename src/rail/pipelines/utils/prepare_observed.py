@@ -17,7 +17,8 @@ if 'PZ_DUSTMAP_DIR' not in os.environ:  # pragma: no cover
 
 dustmap_dir = os.path.expandvars("${PZ_DUSTMAP_DIR}")
 
-class PrepareComCamPipeline(RailPipeline):
+
+class PrepareObservedPipeline(RailPipeline):
 
     default_input_dict={'input':'dummy.parq'}
 
