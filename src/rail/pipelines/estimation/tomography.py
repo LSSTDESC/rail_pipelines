@@ -22,6 +22,7 @@ class TomographyPipeline(RailPipeline):
             classifiers: dict | None=None,
             summarizers: dict | None=None,
             n_tomo_bins: int=5,
+            nsamples: int=20
         ):
         RailPipeline.__init__(self)
 
@@ -77,6 +78,6 @@ class TomographyPipeline(RailPipeline):
                                 tomography_bins=the_classifier.io.output,
                             ),
                             selected_bin=ibin,
-                            nsamples=20,
+                            nsamples=nsamples,
                         )
                         self.add_stage(the_summarizer)
