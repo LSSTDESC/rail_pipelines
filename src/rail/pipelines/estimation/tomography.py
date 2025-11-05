@@ -53,7 +53,7 @@ class TomographyPipeline(RailPipeline):
                 self.default_input_dict[f"input_{pz_algo_name_}"] = 'dummy.in'
                 self.add_stage(the_classifier)
 
-                for ibin in range(n_tomo_bins):
+                for ibin in range(1, n_tomo_bins+1):
 
                     true_nz = TrueNZHistogrammer.make_and_connect(
                         name=f"true_nz_{pz_algo_name_}_{classifier_name_}_bin{ibin}",
