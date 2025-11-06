@@ -22,6 +22,7 @@ class TomographyPipeline(RailPipeline):
             classifiers: dict | None=None,
             summarizers: dict | None=None,
             n_tomo_bins: int=5,
+            nsamples: int=20
         ):
         RailPipeline.__init__(self)
 
@@ -53,7 +54,7 @@ class TomographyPipeline(RailPipeline):
                 self.default_input_dict[f"input_{pz_algo_name_}"] = 'dummy.in'
                 self.add_stage(the_classifier)
 
-                for ibin in range(n_tomo_bins):
+                for ibin in range(1, n_tomo_bins+1):
 
                     true_nz = TrueNZHistogrammer.make_and_connect(
                         name=f"true_nz_{pz_algo_name_}_{classifier_name_}_bin{ibin}",
@@ -77,6 +78,6 @@ class TomographyPipeline(RailPipeline):
                                 tomography_bins=the_classifier.io.output,
                             ),
                             selected_bin=ibin,
-                            nsamples=20,
+                            nsamples=nsamples,
                         )
                         self.add_stage(the_summarizer)
