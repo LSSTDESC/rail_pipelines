@@ -28,7 +28,7 @@ jobs:
         sudo apt-get update
         python -m pip install --upgrade pip
         sudo apt-get install -y libbz2-dev build-essential
-        python -m pip install "numpy<2" cython wheel
+        python -m pip install cython wheel
         python -m pip install --no-build-isolation somoclu
         pip install .
         pip install .[dev]
