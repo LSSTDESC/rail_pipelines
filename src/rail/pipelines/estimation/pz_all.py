@@ -5,7 +5,7 @@ import ceci
 
 # Various rail modules
 from rail.core.stage import RailStage, RailPipeline
-from rail.utils.catalog_utils import CatalogConfigBase
+from rail.utils import catalog_utils
 from rail.evaluation.single_evaluator import SingleEvaluator
 from rail.utils.algo_library import PZ_ALGORITHMS
 
@@ -27,14 +27,14 @@ class PzPipeline(RailPipeline):
         DS = RailStage.data_store
         DS.__class__.allow_overwrite = True
 
-        active_catalog = CatalogConfigBase.active_class()
+        active_catalog_config = catalog_utils.get_active_tag()
 
         eval_shared_stage_opts = dict(
             metrics=['all'],
             exclude_metrics=['rmse', 'ks', 'kld', 'cvm', 'ad', 'rbpe', 'outlier'],
             hdf5_groupname="",
             limits=[0, 3.5],
-            truth_point_estimates=[active_catalog.redshift_col],
+            truth_point_estimates=[active_catalog_config.config['redshift_col']],
             point_estimates=['zmode'],
         )
 
