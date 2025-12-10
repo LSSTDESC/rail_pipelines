@@ -40,7 +40,7 @@ full = [
 ]
 
 dev = [
-    "pz-rail-pipelines[full],
+    "pz-rail-pipelines[full]",
     "coverage",
     "pytest",
     "pytest-cov", # Used to report total code coverage
