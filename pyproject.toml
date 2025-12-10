@@ -24,11 +24,23 @@ dependencies = [
 # On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
 [project.optional-dependencies]
 full = [
-    "pz-rail[algos]",
+    "pz-rail-astro-tools",
+    "pz-rail-bpz",
+    "pz-rail-cmnn",
+    "pz-rail-dnf",
+    "pz-rail-dsps",
+    "pz-rail-flexzboost",
+    "pz-rail-fsps",
+    "pz-rail-gpz-v1",
+    "pz-rail-pzflow",
+    "pz-rail-sklearn",
+    "pz-rail-yaw",
+    "pz-rail-lephare",
+    "qp-prob[full]>=1.0.0",
 ]
 
 dev = [
-    "pz-rail[algos]",
+    "pz-rail-pipelines[full],
     "coverage",
     "pytest",
     "pytest-cov", # Used to report total code coverage
