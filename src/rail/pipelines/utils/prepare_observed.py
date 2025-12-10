@@ -32,14 +32,14 @@ class PrepareObservedPipeline(RailPipeline):
         DS = RailStage.data_store
         DS.__class__.allow_overwrite = True
 
-        active_catalog_config = catalog_utils.CatalogConfigBase.active_class()
+        active_catalog_config = catalog_utils.get_active_tag()
 
         self.flux_to_mag = LSSTFluxToMagConverter.build(
             flux_name="{band}Flux",
             flux_err_name="{band}FluxErr",
             mag_name="{band}Mag",
             mag_err_name="{band}MagErr",
-            bands=active_catalog_config.bandlist,
+            bands=active_catalog_config.config['band_list'],
             copy_cols=dict(
                 objectId='objectId',
                 coord_ra='coord_ra',
