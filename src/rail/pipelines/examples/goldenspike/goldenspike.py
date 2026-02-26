@@ -33,8 +33,6 @@ class GoldenspikePipeline(RailPipeline):
     def __init__(self) -> None:
         RailPipeline.__init__(self)
 
-        DS = RailStage.data_store
-        DS.__class__.allow_overwrite = True
         bands = ['u','g','r','i','z','y']
         band_dict = {band:f'mag_{band}_lsst' for band in bands}
         rename_dict = {f'mag_{band}_lsst_err':f'mag_err_{band}_lsst' for band in bands}

@@ -24,9 +24,6 @@ class PzPipeline(RailPipeline):
     def __init__(self, algorithms: dict|None=None):
         RailPipeline.__init__(self)
 
-        DS = RailStage.data_store
-        DS.__class__.allow_overwrite = True
-
         active_catalog_config = catalog_utils.get_active_tag()
 
         eval_shared_stage_opts = dict(
