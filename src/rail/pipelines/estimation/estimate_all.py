@@ -22,9 +22,6 @@ class EstimatePipeline(RailPipeline):
 
         RailPipeline.__init__(self)
 
-        DS = RailStage.data_store
-        DS.__class__.allow_overwrite = True
-
         if algorithms is None:
             algorithms = PZ_ALGORITHMS.copy()
 

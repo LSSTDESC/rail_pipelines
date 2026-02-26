@@ -23,9 +23,6 @@ class SurveyNonuniformDegraderPipeline(RailPipeline):
     def __init__(self) -> None:
         RailPipeline.__init__(self)
 
-        DS = RailStage.data_store
-        DS.__class__.allow_overwrite = True
-
         ### Creation steps:
         bands = ['u','g','r','i','z','y']
         rename_dict = {f'mag_{band}_lsst_err':f'mag_err_{band}_lsst' for band in bands}
