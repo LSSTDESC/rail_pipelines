@@ -15,6 +15,7 @@ import pytest
         'rail.pipelines.utils.prepare_observed.PrepareObservedPipeline',
         'rail.pipelines.examples.goldenspike.goldenspike.GoldenspikePipeline',
         'rail.pipelines.examples.survey_nonuniformity.survey_nonuniformity.SurveyNonuniformDegraderPipeline',
+        'rail.pipelines.estimation.somoclu_train_estimate.SOMTrainEstimatePipeline',
     ]
 )
 def test_build_and_read_pipeline(pipeline_class):
