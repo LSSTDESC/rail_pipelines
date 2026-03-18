@@ -25,9 +25,6 @@ class SOMTrainEstimatePipeline(RailPipeline):
     def __init__(self, inform_dict=None, summ_dict=None):
         RailPipeline.__init__(self)
 
-        DS = RailStage.data_store
-        DS.__class__.allow_overwrite = True
-
         if inform_dict is None:
             inform_dict = {}
         if summ_dict is None:
@@ -35,15 +32,12 @@ class SOMTrainEstimatePipeline(RailPipeline):
 
         informer = SOMocluInformer.make_and_connect(
             name='inform_som',
-            hdf5_groupname='',
             **inform_dict,
         )
         self.add_stage(informer)
 
         summarizer = SOMocluSummarizer.make_and_connect(
             name='summarize_som',
-            hdf5_groupname='',
-            spec_groupname='',
             connections=dict(model=informer.io.model),
             **summ_dict,
         )
