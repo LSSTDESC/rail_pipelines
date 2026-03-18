@@ -18,7 +18,8 @@ class SOMTrainEstimatePipeline(RailPipeline):
     """
 
     default_input_dict = {
-        'input': 'dummy.in',
+        'input_train': 'dummy.in',
+        'input_photo': 'dummy.in',
         'spec_input': 'dummy.in',
     }
 
@@ -32,12 +33,14 @@ class SOMTrainEstimatePipeline(RailPipeline):
 
         informer = SOMocluInformer.make_and_connect(
             name='inform_som',
+            aliases=dict(input='input_train'),
             **inform_dict,
         )
         self.add_stage(informer)
 
         summarizer = SOMocluSummarizer.make_and_connect(
             name='summarize_som',
+            aliases=dict(input='input_photo'),
             connections=dict(model=informer.io.model),
             **summ_dict,
         )
