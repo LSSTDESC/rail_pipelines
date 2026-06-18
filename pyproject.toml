@@ -25,7 +25,7 @@ dependencies = [
 [project.optional-dependencies]
 full = [
     "pz-rail-astro-tools",
-    "pz-rail-bpz",
+    "pz-rail-bpz>=2.1.2",
     "pz-rail-cmnn",
     "pz-rail-dnf",
     "pz-rail-dsps",
