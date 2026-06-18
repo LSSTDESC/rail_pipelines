@@ -1,6 +1,6 @@
 [project]
 name = "pz-rail-pipelines"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 license = {file = "LICENSE"}
 readme = "README.md"
 authors = [
@@ -17,7 +17,7 @@ classifiers = [
 dynamic = ["version"]
 
 dependencies = [
-    "pz-rail-base",
+    "pz-rail-base>=2.0.0",
     "click",
 ]
 
@@ -25,14 +25,14 @@ dependencies = [
 [project.optional-dependencies]
 full = [
     "pz-rail-astro-tools",
-    "pz-rail-bpz",
+    "pz-rail-bpz>=2.1.3",
     "pz-rail-cmnn",
     "pz-rail-dnf",
     "pz-rail-dsps",
     "pz-rail-flexzboost",
     "pz-rail-fsps",
     "pz-rail-gpz-v1",
-    "pz-rail-pzflow",
+    "pz-rail-pzflow>=2.0.3",
     "pz-rail-sklearn",
     "pz-rail-yaw",
     "pz-rail-lephare",
