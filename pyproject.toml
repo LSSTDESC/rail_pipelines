@@ -17,7 +17,7 @@ classifiers = [
 dynamic = ["version"]
 
 dependencies = [
-    "pz-rail-base",
+    "pz-rail-base>=2.0.0",
     "click",
 ]
 
@@ -32,7 +32,7 @@ full = [
     "pz-rail-flexzboost",
     "pz-rail-fsps",
     "pz-rail-gpz-v1",
-    "pz-rail-pzflow",
+    "pz-rail-pzflow>=2.0.3",
     "pz-rail-sklearn",
     "pz-rail-yaw",
     "pz-rail-lephare",
