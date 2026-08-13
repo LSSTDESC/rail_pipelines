@@ -51,30 +51,30 @@ class TomographyPipeline(RailPipeline):
                 self.default_input_dict[f"input_{pz_algo_name_}"] = 'dummy.in'
                 self.add_stage(the_classifier)
 
-                for ibin in range(1, n_tomo_bins+1):
+                true_nz = TrueNZHistogrammer.make_and_connect(
+                    name=f"true_nz_{pz_algo_name_}_{classifier_name_}",
+                    connections=dict(
+                        tomography_bins=the_classifier.io.output,
+                    ),
+                    selected_bin=0,
+                    n_tomo_bins=n_tomo_bins,
+                    aliases=dict(input='truth'),
+                )
+                self.add_stage(true_nz)
 
-                    true_nz = TrueNZHistogrammer.make_and_connect(
-                        name=f"true_nz_{pz_algo_name_}_{classifier_name_}_bin{ibin}",
+                for summarizer_name_, summarize_info_ in summarizers.items():
+                    summarizer_class = ceci.PipelineStage.get_stage(
+                        summarize_info_['Summarize'],
+                        summarize_info_['Module'],
+                    )
+                    the_summarizer = summarizer_class.make_and_connect(
+                        name=f'summarize_{pz_algo_name_}_{classifier_name_}_{summarizer_name_}',
+                        aliases=dict(input=f"input_{pz_algo_name_}"),
                         connections=dict(
                             tomography_bins=the_classifier.io.output,
                         ),
-                        selected_bin=ibin,
-                        aliases=dict(input='truth'),
+                        selected_bin=0,
+                        n_tomo_bins=n_tomo_bins,
+                        nsamples=nsamples,
                     )
-                    self.add_stage(true_nz)
-
-                    for summarizer_name_, summarize_info_ in summarizers.items():
-                        summarizer_class = ceci.PipelineStage.get_stage(
-                            summarize_info_['Summarize'],
-                            summarize_info_['Module'],
-                        )
-                        the_summarizer = summarizer_class.make_and_connect(
-                            name=f'summarize_{pz_algo_name_}_{classifier_name_}_bin{ibin}_{summarizer_name_}',
-                            aliases=dict(input=f"input_{pz_algo_name_}"),
-                            connections=dict(
-                                tomography_bins=the_classifier.io.output,
-                            ),
-                            selected_bin=ibin,
-                            nsamples=nsamples,
-                        )
-                        self.add_stage(the_summarizer)
+                    self.add_stage(the_summarizer)
